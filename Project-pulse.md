@@ -12,11 +12,14 @@ Large graphs retain every node with expandable grouping. Added PowerShell 5.1
 installer and copyable shell-specific commands. Docs include upgrade guidance,
 host capability limits and a Russian Discord description.
 
-Checks: 18 Python unit/integration tests and 41 browser parity checks PASS locally.
+Checks: 20 Python unit/integration tests and 41 browser parity checks PASS locally.
 Archive, isolated CLI install and standalone skill-only completed-fixture execution
 PASS. Actual Windows PowerShell 5.1 and Bash dry runs PASS. Cross-platform CI is
 a separate gate. Read-only Tools_C inventory produced 713 components/4,283
 relationships; it is explicitly a survey, not a claimed semantic Tools_C audit.
+Actual Git Bash installation from GitHub into the user environment PASS; the
+installed 0.2.0 skill launcher starts and no MCP configuration is present. Git Bash
+selects codex.exe on Windows, guarded by two platform-selection regression tests.
 No native Chat model invocation is claimed by the automated browser harness.
 Tools_C sources and installed private plugin caches remain unchanged. No .tooling
 profile existed in this repository; no unrelated project integration was added.

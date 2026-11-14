@@ -1,0 +1,20 @@
+name: Package plugin release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -B -m unittest discover -s tests -v
+      - run: python -B scripts/package.py
+      - name: Publish the inspected plugin ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "dist/arc-xray-${GITHUB_REF_NAME#v}.zip" --verify-tag --title "Arc-XRay ${GITHUB_REF_NAME#v}" --notes-file docs/releases/0.2.0.md

@@ -2,7 +2,7 @@
 
 2026-11-15, Europe/Riga. Evidence is scoped to the checks performed.
 
-- PASS: 18 Python unit/integration checks cover source edges, read-only behavior,
+- PASS: 20 Python unit/integration checks cover source edges, read-only behavior,
   evidence freshness, report/localization/exports and survey/completion gates.
 - PASS: 41 browser checks exercise the canonical blue file, map/tree/search/filter,
   source inspectors, pan/zoom, logs and save-cancellation, focus mode, responsive
@@ -25,3 +25,5 @@ renderer; it does not claim an inaccessible host can execute code automatically.
 Русский: проверки архива и браузера не подменяют фактический вызов агентом в
 обычном Chat. Полнота означает исследованную статическую область с доказательствами,
 а не гарантию отсутствия ошибок. Исходники Tools_C не изменялись.
+
+- PASS: actual Git Bash install in the user environment; installed 0.2.0 doctor reports mcp_required=false. Shell regression tests verify Windows exe/native Unix selection.

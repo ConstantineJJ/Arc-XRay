@@ -11,7 +11,7 @@ use the **same packaged renderer and complete data model**.
 
 ## Install in the application
 
-Download/build `dist/arc-xray-0.2.0.zip`, then choose **Plugins → Add → Upload plugin
+[Download arc-xray-0.2.0.zip](https://github.com/ConstantineJJ/Arc-XRay/releases/download/v0.2.0/arc-xray-0.2.0.zip), then choose **Plugins → Add → Upload plugin
 archive**. Select Arc-XRay in a new chat. The ZIP contains the skill, Python runtime,
 HTML/CSS/JS viewer and original icon. Its Skills page displays the agent instructions;
 the executable code and viewer live in supporting files within that same skill.
@@ -29,7 +29,13 @@ codex plugin marketplace add ConstantineJJ/Arc-XRay
 if ($LASTEXITCODE -eq 0) { codex plugin add arc-xray@arc-xray }
 ```
 
-**Bash / Git Bash / Linux / macOS**:
+**Git Bash on Windows**:
+
+```bash
+codex.exe plugin marketplace add ConstantineJJ/Arc-XRay && codex.exe plugin add arc-xray@arc-xray
+```
+
+**Bash on Linux/macOS**:
 
 ```bash
 codex plugin marketplace add ConstantineJJ/Arc-XRay && codex plugin add arc-xray@arc-xray

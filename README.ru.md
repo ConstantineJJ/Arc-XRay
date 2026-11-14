@@ -11,7 +11,7 @@ MCP, коннекторы и API key не нужны. Агент исследу�
 
 ## Установка через приложение
 
-Используйте `dist/arc-xray-0.2.0.zip`: **Plugins → Добавить → Загрузить архив
+[Скачайте arc-xray-0.2.0.zip](https://github.com/ConstantineJJ/Arc-XRay/releases/download/v0.2.0/arc-xray-0.2.0.zip): **Plugins → Добавить → Загрузить архив
 плагина**. Откройте новый чат и выберите Arc-XRay. В архиве находятся инструкции,
 Python-анализатор, шаблон синего UI, локализация и исходный значок.
 
@@ -31,7 +31,13 @@ codex plugin marketplace add ConstantineJJ/Arc-XRay
 if ($LASTEXITCODE -eq 0) { codex plugin add arc-xray@arc-xray }
 ```
 
-**Bash / Git Bash / Linux / macOS**:
+**Git Bash в Windows**:
+
+```bash
+codex.exe plugin marketplace add ConstantineJJ/Arc-XRay && codex.exe plugin add arc-xray@arc-xray
+```
+
+**Bash в Linux/macOS**:
 
 ```bash
 codex plugin marketplace add ConstantineJJ/Arc-XRay && codex plugin add arc-xray@arc-xray
