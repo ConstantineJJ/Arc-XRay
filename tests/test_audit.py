@@ -83,6 +83,39 @@ class AuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             enrich(data, invalid, self.root)
 
+    def test_enrichment_detects_stale_snapshot_and_supports_semantic_review(self):
+        path = self.put("main.py", "def main():\n    return 1\n")
+        data = scan(self.root)
+        node = next(n for n in data["nodes"] if n["kind"] == "module")
+        patch = {"node_updates": [{"id": node["id"], "purpose": "Application entrypoint", "inputs": "No arguments", "outputs": "Returns 1", "evidence": [{"path": "main.py", "line": 1, "end": 2}]}]}
+        result = enrich(data, patch, self.root)
+        self.assertTrue(result["project"]["agent_review"])
+        self.assertEqual(result["nodes"][0]["purpose"], "Application entrypoint")
+        self.assertNotEqual(data["nodes"][0]["purpose"], "Application entrypoint")
+        path.write_text("def main():\n    return 2\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Source changed"):
+            enrich(data, patch, self.root)
+
+    def test_call_labels_do_not_copy_nested_password_arguments(self):
+        self.put("main.py", 'from pathlib import Path\nPath(password="literal-sensitive-value").write_text("x")\n')
+        data = scan(self.root)
+        self.assertNotIn("literal-sensitive-value", json.dumps(data))
+        self.assertFalse(any(n["kind"] == "resource" and n["label"] == "I/O: Path" for n in data["nodes"]))
+
+    def test_qualified_efficiency_observations(self):
+        self.put("main.py", "import requests\nimport asyncio\n\nasync def handler():\n    queue = asyncio.Queue()\n    response = requests.get('https://example.invalid')\n    return response\n")
+        data = scan(self.root)
+        rules = {f["rule"] for f in data["findings"]}
+        self.assertTrue({"network-timeout", "blocking-async", "unbounded-queue"} <= rules)
+        self.assertTrue(all(f["status"] == "inference" for f in data["findings"]))
+
+    def test_enrichment_rejects_nonexistent_source_line(self):
+        self.put("main.py", "pass\n")
+        data = scan(self.root)
+        patch = {"node_updates": [{"id": data["nodes"][0]["id"], "purpose": "Fake anchor", "evidence": [{"path": "main.py", "line": 999}]}]}
+        with self.assertRaisesRegex(ValueError, "line range"):
+            enrich(data, patch, self.root)
+
 
 if __name__ == "__main__":
     unittest.main()

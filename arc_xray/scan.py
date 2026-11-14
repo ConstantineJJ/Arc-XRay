@@ -20,6 +20,23 @@ SKIP_DIRS = {".git", ".svn", ".hg", "node_modules", "__pycache__", ".venv", "ven
 SENSITIVE = (".env*", "*credentials*", "*secret*", "*.pem", "*.key", "*token*", "*lock.json", "*.lock")
 
 
+def linked(path):
+    return path.is_symlink() or (hasattr(path, "is_junction") and path.is_junction())
+
+
+def call_name(node):
+    """Describe call syntax without copying argument values into component labels."""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return call_name(node.value) + "." + node.attr
+    if isinstance(node, ast.Call):
+        return call_name(node.func) + "(…)"
+    if isinstance(node, ast.Subscript):
+        return call_name(node.value) + "[…]"
+    return "<expression>"
+
+
 def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000_000, exclude=(), output=None):
     root = Path(root).resolve()
     if not root.is_dir():
@@ -41,8 +58,14 @@ def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000
                 "Secrets are excluded by filename and excerpts receive best-effort redaction; review artifacts before sharing."]}}
     coverage, files, total = data["coverage"], {}, 0
     out = Path(output).resolve() if output else None
+    enumerated, stop = 0, False
     for directory, dirs, names in os.walk(root, followlinks=False):
-        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not (Path(directory) / d).is_symlink()
+        enumerated += len(dirs) + len(names)
+        if enumerated > 30_000:
+            coverage["truncated"] = True
+            coverage["limitations"].append("Directory enumeration stopped after 30,000 entries; discovered-file counts cover only the visited prefix.")
+            break
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not linked(Path(directory) / d)
                          and not (out and (Path(directory) / d).resolve() == out)
                          and not any(fnmatch.fnmatch((Path(directory) / d).relative_to(root).as_posix(), p) for p in exclude))
         for filename in sorted(names):
@@ -51,14 +74,16 @@ def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000
             if path.suffix.lower() not in EXTENSIONS:
                 continue
             coverage["discovered_files"] += 1
-            if (path.is_symlink() or any(fnmatch.fnmatch(filename.lower(), p) for p in SENSITIVE)
+            if (linked(path) or any(fnmatch.fnmatch(filename.lower(), p) for p in SENSITIVE)
                 or relative.startswith("docs/architecture-review/") or any(fnmatch.fnmatch(relative, p) for p in exclude)):
                 coverage["excluded_files"] += 1
                 continue
             if len(files) >= max_files:
                 coverage["truncated"] = True
                 coverage["skipped"].append({"path": relative, "reason": "file-count-limit"})
-                continue
+                coverage["limitations"].append("File count reached; remaining directories were not traversed. Discovered-file counts cover only the visited prefix.")
+                stop = True
+                break
             try:
                 size = path.stat().st_size
                 if size > max_bytes or total + size > max_total:
@@ -78,6 +103,8 @@ def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000
                 continue
             total += len(raw)
             files[relative] = (raw, text)
+        if stop:
+            break
     coverage["analyzed_files"] = len(files)
     coverage["languages"] = dict(Counter(EXTENSIONS[Path(p).suffix.lower()] for p in files))
     coverage["bytes_read"] = total
@@ -165,7 +192,7 @@ def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000
                 edge(source, target, "dependency", "import " + name, ev)
         for call in (n for n in ast.walk(tree) if isinstance(n, ast.Call)):
             try:
-                called = ast.unparse(call.func)
+                called = call_name(call.func)
             except RecursionError:
                 continue
             ev = add_evidence(data, path, raw, call.lineno, call.end_lineno)
@@ -176,7 +203,15 @@ def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000
                 finding(data, "dynamic-execution", "Dynamic code execution call", f"{path}:{call.lineno} contains a call named {called}.",
                     "If untrusted input reaches this call it can cross a trust boundary. Name shadowing and input provenance have not been resolved.",
                     "Trace the input, caller authorization and process permissions; do not infer exploitability from syntax alone.", [source], [ev], "high")
-            if called in {"open", "Path", "pathlib.Path"} or called.endswith((".read_text", ".write_text", ".read_bytes", ".write_bytes", ".execute", ".fetch", ".fetchall")):
+            if called in {"requests.get", "requests.post", "requests.put", "requests.delete", "requests.patch", "requests.request", "urllib.request.urlopen"} and not any(k.arg == "timeout" for k in call.keywords):
+                finding(data, "network-timeout", "Network call omits an explicit timeout", f"{path}:{call.lineno} calls {called} without a timeout keyword.",
+                    "If no timeout is imposed elsewhere, waiting can be unbounded. Wrapper behavior, global defaults and runtime reachability are unverified.",
+                    "Trace client configuration and outer deadlines before deciding whether a timeout is missing.", [source], [ev])
+            if called in {"queue.Queue", "asyncio.Queue"} and not call.args and not any(k.arg == "maxsize" for k in call.keywords):
+                finding(data, "unbounded-queue", "Queue construction has no explicit capacity", f"{path}:{call.lineno} constructs {called} without a maxsize argument.",
+                    "If producers outpace consumers and no outer bound exists, pending work may grow. The queue may also be intentionally bounded by its caller.",
+                    "Review producer rate, backpressure, cancellation and memory limits. No load benchmark was performed.", [source], [ev])
+            if called == "open" or called.endswith((".read_text", ".write_text", ".read_bytes", ".write_bytes", ".execute", ".fetch", ".fetchall")):
                 label = "I/O: " + called
                 literal = call.args[0].value if call.args and isinstance(call.args[0], ast.Constant) and isinstance(call.args[0].value, str) else None
                 if literal and len(literal) < 100 and not re.search(r"[\\:]|password|secret|token|key", literal, re.I):
@@ -195,6 +230,14 @@ def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000
                     finding(data, "swallowed-error", "Broad exception is silently discarded", f"{path}:{handler.lineno} has a broad except handler containing only pass.",
                         "Failures may become difficult to observe; the surrounding context may still make this intentional.",
                         "Review failure visibility, return values and the intended recovery behavior.", [source], [ev])
+        for function in (n for n in ast.walk(tree) if isinstance(n, ast.AsyncFunctionDef)):
+            blocking = [n for n in ast.walk(function) if isinstance(n, ast.Call) and
+                        (call_name(n.func) in {"time.sleep", "requests.get", "requests.post"} or call_name(n.func).endswith((".read_text", ".write_text", ".read_bytes", ".write_bytes")))]
+            for call in blocking[:10]:
+                ev = add_evidence(data, path, raw, call.lineno, call.end_lineno)
+                finding(data, "blocking-async", "Synchronous operation inside an async function", f"{path}:{call.lineno}: {call_name(call.func)} appears in async function {function.name}.",
+                    "If executed on the event-loop thread, synchronous waiting or I/O can delay other tasks. Name binding, nested scopes and scheduling are not resolved.",
+                    "Verify the actual call path and execution thread, then measure latency before changing the design.", [source], [ev])
         # Keep the first view bounded; deeper functions remain listed in component cards.
         candidates = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name in {"main", "run", "handler", "serve"}]
         candidates += [n for n in tree.body if isinstance(n, ast.If) and "__name__" in ast.unparse(n.test)]

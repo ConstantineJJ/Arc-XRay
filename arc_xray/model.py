@@ -22,7 +22,7 @@ def safe_relative(root, name):
     current = Path(root)
     for part in rel.parts:
         current /= part
-        if current.is_symlink():
+        if current.is_symlink() or (hasattr(current, "is_junction") and current.is_junction()):
             raise ValueError("Symbolic links are not source evidence")
     if not path.resolve().is_relative_to(Path(root).resolve()):
         raise ValueError("Path escapes project")
@@ -50,6 +50,12 @@ def add_evidence(data, path, raw, line=1, end=None):
 def validate(data):
     if data.get("schema_version") != 1:
         raise ValueError("Unsupported atlas schema")
+    for anchor in data["evidence"].values():
+        name = anchor["path"]
+        if not isinstance(name, str) or PurePosixPath(name).is_absolute() or ".." in PurePosixPath(name).parts or ":" in name or "\\" in name:
+            raise ValueError("Evidence path must be project-relative")
+        if not re.fullmatch(r"[0-9a-f]{64}", anchor["sha256"]) or type(anchor["line"]) is not int or type(anchor["end"]) is not int or not 1 <= anchor["line"] <= anchor["end"]:
+            raise ValueError("Invalid source evidence anchor")
     ids = set()
     for bucket in ("nodes", "edges", "findings", "views"):
         local = set()
@@ -57,6 +63,10 @@ def validate(data):
             if not re.fullmatch(r"[A-Za-z0-9_.:-]{1,160}", item["id"]) or item["id"] in local:
                 raise ValueError(f"Invalid/duplicate {bucket} id: {item['id']}")
             local.add(item["id"])
+            required = {"nodes": {"label", "group", "kind", "purpose", "inputs", "outputs"}, "edges": {"source", "target", "kind", "label"},
+                        "findings": {"rule", "title", "severity", "observation", "impact", "proposal", "nodes"}, "views": {"title", "description", "nodes", "edges"}}[bucket]
+            if required - set(item):
+                raise ValueError(f"Missing {bucket} fields: {sorted(required - set(item))}")
             if bucket in {"nodes", "edges", "findings"}:
                 if item["status"] not in STATUSES:
                     raise ValueError("Unknown evidence status")
@@ -89,6 +99,10 @@ def enrich(data, patch, root):
     """Merge agent-authored semantic review, validating evidence against source bytes."""
     result = copy.deepcopy(data)
     known = {n["id"]: n for n in result["nodes"]}
+    original_hashes = {e["path"]: e["sha256"] for e in result["evidence"].values()}
+    for path, digest in original_hashes.items():
+        if hashlib.sha256(safe_relative(root, path).read_bytes()).hexdigest() != digest:
+            raise ValueError("Source changed since scan; rescan before enriching")
 
     def refs(value):
         found = []
@@ -107,7 +121,12 @@ def enrich(data, patch, root):
                 allowed = {e["path"] for e in result["evidence"].values()}
                 if ref["path"] not in allowed or path.stat().st_size > 256_000:
                     raise ValueError("Evidence outside scanned source inventory")
-                found.append(add_evidence(result, ref["path"], path.read_bytes(), ref["line"], ref.get("end")))
+                raw = path.read_bytes()
+                count = len(raw.decode("utf-8-sig").splitlines()) or 1
+                start, end = ref["line"], ref.get("end", ref["line"])
+                if type(start) is not int or type(end) is not int or not 1 <= start <= end <= count:
+                    raise ValueError("Evidence line range is outside the source file")
+                found.append(add_evidence(result, ref["path"], raw, start, end))
         if not found:
             raise ValueError("Enrichment requires evidence")
         return found

@@ -1,7 +1,7 @@
 """Bounded, source-level execution sketches, explicitly not runtime traces."""
 import ast
 
-from .model import add_evidence, identity
+from .model import add_evidence, identity, redact
 
 
 def build_flow(data, path, raw, entry, add_edge):
@@ -19,7 +19,7 @@ def build_flow(data, path, raw, entry, add_edge):
         counter += 1
         ref = add_evidence(data, path, raw, statement.lineno, getattr(statement, "end_lineno", statement.lineno))
         key = identity("step", f"{view_id}:{counter}")
-        data["nodes"].append({"id": key, "label": label[:160], "path": path, "group": "flow", "kind": kind,
+        data["nodes"].append({"id": key, "label": redact(label)[:160], "path": path, "group": "flow", "kind": kind,
             "status": "verified", "purpose": "Source-level execution step. Connections show possible syntactic paths, not observed execution.",
             "inputs": "See source condition/arguments.", "outputs": "Possible next step; runtime values unknown.", "evidence": [ref]})
         members.append(key)
