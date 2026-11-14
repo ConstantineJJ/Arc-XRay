@@ -1,0 +1,23 @@
+{
+  "name": "arc-xray",
+  "version": "0.1.0",
+  "description": "Read-only architecture atlases and source-backed review.",
+  "author": {"name": "ConstantineJJ"},
+  "homepage": "https://github.com/ConstantineJJ/Arc-XRay",
+  "repository": "https://github.com/ConstantineJJ/Arc-XRay.git",
+  "license": "MIT",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Arc-XRay",
+    "shortDescription": "Explore your architecture",
+    "longDescription": "Source-backed architecture atlases for user-selected local projects. Offline HTML and an embedded MCP App viewer.",
+    "developerName": "ConstantineJJ",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive"],
+    "defaultPrompt": ["Create a read-only architecture atlas for this project.", "Review architectural risks and connect each observation to source evidence."],
+    "logo": "./assets/arc-xray.png",
+    "composerIcon": "./assets/arc-xray.png",
+    "brandColor": "#13D3C4"
+  }
+}

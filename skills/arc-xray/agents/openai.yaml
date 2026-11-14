@@ -1,0 +1,9 @@
+interface:
+  display_name: "Arc-XRay"
+  short_description: "Explore source-backed architecture"
+  icon_small: "../../assets/arc-xray.png"
+  icon_large: "../../assets/arc-xray.png"
+  brand_color: "#13D3C4"
+  default_prompt: "Use $arc-xray to create a read-only architecture atlas and evidence-based review of this project."
+policy:
+  allow_implicit_invocation: true

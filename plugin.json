@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "arc-xray",
+  "version": "0.1.0",
+  "description": "Read-only, source-backed architecture audits with interactive maps, execution sketches, editable diagrams and evidence-based review.",
+  "author": {"name": "ConstantineJJ", "url": "https://github.com/ConstantineJJ"},
+  "homepage": "https://github.com/ConstantineJJ/Arc-XRay",
+  "repository": "https://github.com/ConstantineJJ/Arc-XRay.git",
+  "license": "MIT",
+  "keywords": ["architecture", "audit", "visualization", "dependencies", "mcp-apps"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Arc-XRay",
+        "shortDescription": "Explore your architecture",
+        "longDescription": "Inspect a user-selected project without executing its code. Create a standalone index.html and explore the same source-backed graph in an MCP Apps client. Includes map/tree layouts, source evidence, qualified architecture risks, finding logs, draw.io and Mermaid. Local Python runtime required; web/mobile need a separately accessible runtime and source access.",
+        "developerName": "ConstantineJJ",
+        "category": "Developer Tools",
+        "capabilities": ["Interactive"],
+        "defaultPrompt": ["Create a read-only architecture atlas for this project.", "Review architectural risks and connect each observation to source evidence."],
+        "logo": "./assets/arc-xray.png",
+        "composerIcon": "./assets/arc-xray.png",
+        "brandColor": "#13D3C4"
+      }
+    }
+  }
+}

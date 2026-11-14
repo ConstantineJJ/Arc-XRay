@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "arc-xray": {
+      "command": "python3",
+      "args": ["-B", "${PLUGIN_ROOT}/arc-xray.py", "mcp", "--data-dir", "${PLUGIN_DATA}"],
+      "cwd": "${PLUGIN_ROOT}"
+    }
+  }
+}
