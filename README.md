@@ -1,111 +1,110 @@
-<p align="center"><img src="assets/arc-xray.png" width="112" alt="Arc-XRay"></p>
+<p align="center"><img src="skills/arc-xray/assets/arc-xray.png" width="100" alt="Arc-XRay"></p>
 <h1 align="center">Arc-XRay</h1>
-<p align="center">Explore your architecture. Follow the evidence.</p>
+<p align="center">Independent architecture analysis. One interactive blue atlas.</p>
 
-[Русская документация](README.ru.md) · [User guide](docs/USAGE.md) · [Capabilities and limits](docs/CAPABILITIES.md)
+[Русский](README.ru.md) · [Guide](docs/USAGE.md) · [Capabilities](docs/CAPABILITIES.md)
 
-Arc-XRay turns a user-selected source project into an interactive architecture
-atlas and an evidence-based architectural review. An agent investigates the
-source; the bundled scanner supplies a reproducible starting graph and the
-renderer creates a standalone **index.html**. The same viewer is available as a
-local **MCP App** in compatible ChatGPT/Codex desktop clients.
+Arc-XRay is a **standalone skills plugin**, with no MCP server, connector or API
+key requirement. An agent reads project source, investigates architecture and
+produces a source-backed interactive **index.html**. Chat, Work and browser viewing
+use the **same packaged renderer and complete data model**.
 
-## Install the plugin
+## Install in the application
 
-Prerequisites: **Python 3.10+ available as `python3`**, Git, and a recent Codex CLI
-with `codex plugin marketplace add` and `codex plugin add` support.
+Download/build `dist/arc-xray-0.2.0.zip`, then choose **Plugins → Add → Upload plugin
+archive**. Select Arc-XRay in a new chat. The ZIP contains the skill, Python runtime,
+HTML/CSS/JS viewer and original icon. Its Skills page displays the agent instructions;
+the executable code and viewer live in supporting files within that same skill.
+
+When replacing 0.1.0, remove the old Arc-XRay installation and import the new archive
+if your app offers no replacement action. The new plugin has no MCP registration.
+Do not edit installed caches. Your generated atlases stay separate from the plugin.
+
+## Terminal installation
+
+**Windows PowerShell 5.1 or newer** — run these lines (no `&&`):
+
+```powershell
+codex plugin marketplace add ConstantineJJ/Arc-XRay
+if ($LASTEXITCODE -eq 0) { codex plugin add arc-xray@arc-xray }
+```
+
+**Bash / Git Bash / Linux / macOS**:
 
 ```bash
 codex plugin marketplace add ConstantineJJ/Arc-XRay && codex plugin add arc-xray@arc-xray
 ```
 
-Or clone this repository, inspect the installer, then run `bash install.sh`.
-The installer uses the same supported commands, checks prerequisites and preserves
-other plugins. `bash install.sh --dry-run` prints the commands without installing.
-Open a new local chat, select **Arc-XRay**, and ask:
+The optional source installers are `install.ps1` and `install.sh`. Both support
+DryRun/--dry-run, preserve other plugins and use supported Codex CLI commands.
+A host Python 3.10+ and actual source access are needed for analysis; installation
+alone does not grant access to a local disk or install a runtime in Chat.
 
-> Create a read-only architecture atlas for this project. Trace important workflows,
-> review architectural risks, and provide both index.html and the in-app viewer.
+## Ask the agent
 
-Installation adds tools and an audit skill; it does not grant access to another
-user's sources. Select a project the agent can actually read.
+> Use Arc-XRay to perform a full read-only source architecture review. Investigate
+> all five areas, trace success and failure paths, and deliver the canonical blue
+> index.html, the same in-app HTML preview, evidence and editable diagrams.
 
-## What you get
+The workflow starts with a survey and continues through semantic source review.
+A **completion gate** requires all five areas, implementation module descriptions
+and execution paths. A survey/partial result cannot pass finalization. This checks
+recorded review coverage, not runtime correctness or infallibility.
 
-- Map and directed tree, zoom/pan, global search, group expansion, filters,
-  colored arrows, source inspectors, adjustable text and canvas-only mode.
-- Separate system, dependency, data/I/O, execution and coverage views.
-- Architectural observations: errors, contradictions, coupling, redundancy,
-  possible efficiency problems and risks, each qualified and linked to source.
-- Single/bulk finding logs in Markdown or JSON, with Save As where the browser
-  supports it and a clearly labeled download fallback.
-- `index.html`, `atlas.json`, `REPORT.md`, `COMPONENTS.md`, editable
-  `architecture.drawio`, and `flows.md` with Mermaid diagrams.
-- English/Russian controls and documentation; the agent writes project-specific
-  analysis in the requested language. Source excerpts and identifiers are retained.
+## Features
 
-No mandatory server subscription, API key, pip install or npm install is needed
-to **run** the shipped plugin. The viewer has no CDN/runtime network dependencies.
+- System architecture, dependencies, data/storage, execution and architectural review.
+- Source-backed observations of errors, contradictions, redundancy, coupling,
+  possible efficiency problems and other risks; assumptions/unknowns stay visible.
+- Blue map/tree UI, zoom/pan, search, expandable groups, relationship filters,
+  readable labels, canvas-only mode and source inspectors.
+- Single/bulk Markdown/JSON finding logs, Save As where supported, download fallback.
+- Autonomous index.html, atlas.json, REPORT.md, COMPONENTS.md, draw.io and Mermaid.
+- English/Russian controls and generated review text. Agent prose follows the user's language.
 
-![Arc-XRay architecture atlas](docs/atlas-preview.png)
+![Arc-XRay blue atlas](docs/atlas-preview.png)
 
-## Run without a plugin host
+## Reproducible local example
 
-```bash
-git clone https://github.com/ConstantineJJ/Arc-XRay.git
-cd Arc-XRay
-python3 -B arc-xray.py audit /path/to/project --out /path/to/new-atlas --language en
-python3 -B arc-xray.py validate /path/to/new-atlas/atlas.json --project /path/to/project
+From the repository root, in PowerShell:
+
+```powershell
+python .\arc-xray.py audit .\examples\python-service --out .\.test-output\demo --enrichment .\examples\python-review.json --language ru --finalize
+Invoke-Item .\.test-output\demo\index.html
 ```
 
-Open the generated **index.html** in a browser. It works directly from `file://`
-and does not need a local web server or adjacent files for interactive exploration.
-`viewer/index.html` in this repository is a build template, not a generated atlas.
-
-Try the synthetic example (it is read, never executed):
+In Bash:
 
 ```bash
-python3 -B arc-xray.py audit examples/python-service --out .test-output/demo --enrichment examples/python-review.json
+python3 -B arc-xray.py audit examples/python-service --out .test-output/demo --enrichment examples/python-review.json --finalize
 ```
 
-## In-app viewing and honest limits
+For another project, the agent supplies its real accessible paths. Commands with
+literal `<plugin-root>` placeholders are not executable examples. Running `audit`
+without semantic review creates an explicitly labeled survey, not a full audit.
 
-The plugin provides a local stdio MCP server and the standard MCP Apps
-`ui://arc-xray/atlas` resource. `arc_xray_audit`, `arc_xray_enrich` and
-`arc_xray_open` deliver the interactive viewer to supporting clients.
+## One preview, honest access limits
 
-**Plain web/mobile ChatGPT cannot start a local stdio process or read your disk.**
-It needs accessible sources and a separately reachable runtime, or a host code
-environment that can generate and preview HTML. This repository does not deploy
-a hosted MCP endpoint. A repository install is also distinct from approval in the
-public OpenAI plugin directory. See [host setup](docs/USAGE.md#host-setup).
+Open the generated index.html in a browser or the host's HTML artifact preview.
+The plugin never needs a separate MCP panel and never substitutes a new simplified
+HTML design. If a host cannot expose packaged files, read sources or run Python,
+the agent must say what is missing rather than invent a graph. Preview/download
+controls depend on the host. A plain textual reply is not atlas acceptance.
 
-Automatic analysis is not a complete architecture audit. Python imports use AST;
-JavaScript/TypeScript, GDScript, Go, Rust and C# imports use **lexical adapters**.
-Other supported source extensions receive inventory coverage. Python execution
-views are bounded syntactic sketches; runtime dispatch, aliases, generated code,
-finally/unwinding and async scheduling are incomplete. Agent source investigation
-and semantic enrichment are part of the plugin workflow.
-
-Source observations, documentation, inference and unknowns are labeled separately.
-Heuristics do not prove defects, exploitability or measured bottlenecks. No automatic
-findings does not mean a clean architecture. Project code is never executed or fixed.
+Python imports use AST; JS/TS, GDScript, Go, Rust and C# have lexical import adapters.
+Other source types receive inventory coverage and need agent interpretation.
+Dynamic dispatch, generated code and runtime behavior are not fully reconstructed.
+No project code is executed or fixed; no benchmarks are invented.
 
 ## Development
 
 ```bash
 python3 -B -m unittest discover -s tests -v
 npm ci
-npm run build:bridge
 npx playwright install chromium
 npm run test:ui
 python3 -B scripts/package.py
 ```
 
-Python runtime uses only the standard library. Node/npm are for development;
-the official MCP Apps bridge is already bundled, with licenses in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Packaging produces
-`dist/arc-xray-0.1.0.zip`, containing one portable plugin and its compatibility
-manifest. No marketplace wrapper, test projects or dependency directories are included.
-
-[Verification record](docs/VERIFICATION.md) · [Design contract](docs/SPEC.md) · [MIT license](LICENSE)
+Runtime is Python standard-library only. Node/Playwright are development tools.
+[Verification](docs/VERIFICATION.md) · [MIT](LICENSE)

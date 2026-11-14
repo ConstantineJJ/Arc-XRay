@@ -1,21 +1,18 @@
-# Capabilities and boundaries / Возможности и границы
+# Arc-XRay 0.2 capabilities
 
-| Area | Implemented | Boundary |
+| Area | Implemented | Honest boundary |
 |---|---|---|
-| Python | AST imports, symbols, candidate imported calls, I/O candidates; bounded branch/loop/error sketches | Does not resolve arbitrary aliasing, reflection, finally/unwinding or async scheduling |
-| JavaScript / TypeScript | Lexical static import/export, require and literal dynamic-import references; relative extension/index lookup | Comments/aliases may mislead; no AST type/call/control-flow analysis |
-| GDScript | Literal preload/load references including res:// | No scene/engine execution or signal graph |
-| Go / Rust / C# | Lexical import/namespace candidates | Workspace/package/namespace resolution is partial; qualified references can be external-or-unknown |
-| C/C++, Java, Ruby, PHP, Shell, SQL, HTML/CSS, docs/config | File inventory, source anchors | Semantic relationships require agent enrichment |
-| Architecture review | Cycles, coupling, large modules, parse failures, dynamic execution, swallowed exceptions, omitted explicit HTTP timeout, queue capacity and blocking-async candidates | Qualified heuristics, not measured defects or a security certification |
-| Agent workflow | Source investigation of all five audit areas; descriptions, boundaries, relationships, workflow views and review enrichment | Requires an agent with actual source access; interpretation is not automatically proven |
-| Offline atlas | Self-contained HTML, map/tree, search, filters, pan/zoom, inspection, focus layout, log exports | Initial graph display capped at 120 matching nodes; explicit Show more; exports remain complete |
-| Embedded viewer | Standard MCP App resource and official App SDK bridge | Requires a compatible client and running local server; payload limit 8 MB |
-| Formats | JSON, Markdown docs/report, editable draw.io pages, Mermaid | Mermaid caps each view at 80 nodes and labels omitted coverage |
-| Distribution | Agent Plugins portable manifest, Codex compatibility manifest, repo marketplace, Bash installer, standalone ZIP | No hosted endpoint or public OpenAI directory listing is provisioned |
+| Plugin | Self-contained skill with Python, viewer and icon | No MCP dependency; host must expose files, source and code execution |
+| Analysis | Architecture, dependencies, data, execution, review | Agent source investigation is required; a scanner survey is not a full audit |
+| Completion | Evidence-backed five-area/module/path gate | Checks recorded coverage, not truth of arbitrary agent reasoning |
+| Python | AST imports, symbols, call/I/O candidates, bounded execution sketches | Reflection, runtime dispatch, async/finally semantics remain partial |
+| JS/TS, GDScript, Go, Rust, C# | Lexical import candidates | No whole-program semantic/type resolution; false matches/omissions possible |
+| Other files | Inventory and source anchors | Agent interpretation needed |
+| Interface | One canonical blue HTML renderer for all previews/downloads | Native host preview controls/access vary; no invented replacement UI |
+| Large graphs | Entire matching graph retained, groups initially collapsed | User can expand every group; very large expanded diagrams can be expensive |
+| Review | Errors, contradictions, redundancy, coupling, potential efficiency/trust/retention risks | Qualify assumptions; no invented benchmark, exploit or runtime proof |
+| Exports | HTML, JSON, Markdown, draw.io, Mermaid, individual/bulk logs | Mermaid has explicit per-view bounds; Save As depends on browser |
 
-Русский: автоматический граф — исходная заготовка для исследования агента.
-Подтверждение исходника, документация, инженерный вывод и неизвестное разделены.
-Статические проверки не подтверждают runtime, безопасность, измеренную эффективность
-или отсутствие ошибок. Проверки и фактические ограничения перечислены в
-[VERIFICATION.md](VERIFICATION.md).
+Русский: независимость от MCP не отменяет необходимость доступа к исходникам и
+Python в окружении приложения. Полный аудит требует исследования агентом, а
+проверка полноты не является сертификацией правильности архитектуры.

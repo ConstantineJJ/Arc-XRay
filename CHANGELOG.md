@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 — 2026-11-15
+
+- Removed mandatory MCP server and bundled its replacement as a self-contained executable skill.
+- Standardized the blue viewer for downloaded HTML and host previews.
+- Added evidence-backed completion gates for five areas, implementation modules and execution paths.
+- Preserved all nodes in large graphs using expandable grouping.
+- Added Windows PowerShell 5.1 installation and real copyable examples.
+- Updated Russian/English guides, upgrade instructions and Discord description.
+
 ## 0.1.0 — 2026-11-15
 
 - Read-only source survey and agent-guided semantic architecture review.
