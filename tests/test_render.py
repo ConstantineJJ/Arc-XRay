@@ -48,6 +48,24 @@ class RenderTests(unittest.TestCase):
         self.assertIn("ontoolresult", html)
         self.assertNotIn("/*__DATA__*/", html)
 
+    def test_output_resolves_parent_alias_without_replacing_link_destination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp).resolve()
+            target = base / "real"
+            target.mkdir()
+            alias = base / "alias"
+            try:
+                alias.symlink_to(target, target_is_directory=True)
+            except OSError:
+                self.skipTest("Creating directory symlinks is not permitted on this host")
+            root = base / "source"
+            root.mkdir()
+            (root / "main.py").write_text("pass\n")
+            render(scan(root), alias / "atlas")
+            self.assertTrue((target / "atlas/index.html").exists())
+            with self.assertRaises(ValueError):
+                render(scan(root), alias)
+
     def test_russian_report_translates_generated_findings(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "source"

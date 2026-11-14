@@ -121,12 +121,11 @@ def component_document(data, language):
 def render(data, output, *, language="en"):
     validate(data)
     output = Path(output)
-    # Do not replace a symlinked path or overwrite an unrelated documentation folder.
-    current = output.absolute()
-    while current != current.parent:
-        if current.is_symlink() or (hasattr(current, "is_junction") and current.is_junction()):
-            raise ValueError("Output cannot contain symbolic links")
-        current = current.parent
+    # Resolve user-selected ancestors, including macOS /var -> /private/var.
+    # The output directory itself and generated files must not be links, and
+    # ownership is checked on the resolved destination before any replacement.
+    if output.is_symlink() or (hasattr(output, "is_junction") and output.is_junction()):
+        raise ValueError("Output directory cannot be a symbolic link")
     output = output.resolve()
     marker = output / ".arc-xray-output"
     if output.exists() and any(output.iterdir()):
