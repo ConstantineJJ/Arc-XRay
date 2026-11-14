@@ -49,6 +49,11 @@ class Server:
         self.allowed_roots = [Path(p).resolve() for p in allowed_roots]
         self.sessions = {}
         self.client_ui = None
+        registry = self.data_dir / "sessions.json"
+        if registry.is_symlink():
+            raise ValueError("Session registry cannot be a symbolic link")
+        if registry.exists():
+            self.sessions = json.loads(registry.read_text(encoding="utf-8"))
 
     def _scope(self, project):
         if not isinstance(project, str) or not Path(project).is_absolute():

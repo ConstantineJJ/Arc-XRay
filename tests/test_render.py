@@ -48,6 +48,18 @@ class RenderTests(unittest.TestCase):
         self.assertIn("ontoolresult", html)
         self.assertNotIn("/*__DATA__*/", html)
 
+    def test_russian_report_translates_generated_findings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "source"
+            root.mkdir()
+            (root / "main.py").write_text('eval("1")\n', encoding="utf-8")
+            output = Path(tmp) / "atlas"
+            render(scan(root), output, language="ru")
+            report = (output / "REPORT.md").read_text(encoding="utf-8")
+            self.assertIn("Вызов динамического выполнения кода", report)
+            self.assertIn("содержит вызов eval", report)
+            self.assertNotIn("Dynamic code execution call", report)
+
 
 if __name__ == "__main__":
     unittest.main()

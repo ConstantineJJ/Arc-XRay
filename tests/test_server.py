@@ -50,6 +50,19 @@ class ServerTests(unittest.TestCase):
             self.assertEqual([r["id"] for r in responses], [1, 2, 3])
             self.assertEqual(responses[-1]["error"]["code"], -32601)
 
+    def test_sessions_survive_a_new_server_and_another_audit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            first, second = base / "first", base / "second"
+            for path in (first, second):
+                path.mkdir()
+                (path / "main.py").write_text("pass\n")
+            one = Server(base / "data").handle("tools/call", {"name": "arc_xray_audit", "arguments": {"project_path": str(first)}})
+            two = Server(base / "data")
+            two.handle("tools/call", {"name": "arc_xray_audit", "arguments": {"project_path": str(second)}})
+            again = Server(base / "data")
+            self.assertIn(one["structuredContent"]["atlas_id"], again.sessions)
+
 
 if __name__ == "__main__":
     unittest.main()

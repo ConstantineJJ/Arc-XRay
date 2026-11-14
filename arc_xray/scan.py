@@ -24,16 +24,18 @@ def linked(path):
     return path.is_symlink() or (hasattr(path, "is_junction") and path.is_junction())
 
 
-def call_name(node):
+def call_name(node, depth=0):
     """Describe call syntax without copying argument values into component labels."""
+    if depth > 40:
+        return "<expression>"
     if isinstance(node, ast.Name):
         return node.id
     if isinstance(node, ast.Attribute):
-        return call_name(node.value) + "." + node.attr
+        return call_name(node.value, depth + 1) + "." + node.attr
     if isinstance(node, ast.Call):
-        return call_name(node.func) + "(…)"
+        return call_name(node.func, depth + 1) + "(…)"
     if isinstance(node, ast.Subscript):
-        return call_name(node.value) + "[…]"
+        return call_name(node.value, depth + 1) + "[…]"
     return "<expression>"
 
 
@@ -240,7 +242,7 @@ def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000
                     "Verify the actual call path and execution thread, then measure latency before changing the design.", [source], [ev])
         # Keep the first view bounded; deeper functions remain listed in component cards.
         candidates = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name in {"main", "run", "handler", "serve"}]
-        candidates += [n for n in tree.body if isinstance(n, ast.If) and "__name__" in ast.unparse(n.test)]
+        candidates += [n for n in tree.body if isinstance(n, ast.If) and any(isinstance(x, ast.Name) and x.id == "__name__" for x in ast.walk(n.test))]
         for entry in candidates[:2]:
             if sum(v.get("category") == "workflow" for v in data["views"]) >= 8:
                 coverage["limitations"].append("Execution views capped at eight entry functions/guards; deeper paths require agent review.")

@@ -16,15 +16,19 @@ let D = null, nodes = new Map(), edges = new Map(), positions = new Map(), drawn
 const state = {view:'system',layout:'map',selected:null,hidden:new Set(),collapsed:new Set(),kinds:new Set(['data','control','dependency']),confidence:'all',search:'',root:'',cross:true,color:'connection',font:1.2,x:0,y:0,scale:1,limit:120,fullscreen:false};
 const palette = ['#78d5f7','#f2bc70','#bb9cff','#7dd6aa','#f491b7','#d6d782','#82aaff','#f09b78','#69d6d0','#d9a0e5','#a6d37d','#e8c496'];
 const t = key => copy[lang][key] || copy.en[key] || key;
+function present(value) {
+ if(lang!=='ru'||typeof value!=='string')return value;
+ return window.ARC_TRANSLATIONS[value] || value.replace('Static dependency cycle: ','Статический цикл зависимостей: ').replace(/ contains a call named (.+)\.$/,' содержит вызов $1.').replace(/ has a broad except handler containing only pass\.$/,' содержит широкий обработчик except с единственным pass.').replace(/ calls (.+) without a timeout keyword\.$/,' вызывает $1 без аргумента timeout.').replace(/ constructs (.+) without a maxsize argument\.$/,' создаёт $1 без аргумента maxsize.').replace(/ appears in async function (.+)\.$/,' находится в async-функции $1.');
+}
 const button = (label, fn, cls) => { const e = text('button',label,cls); e.type='button'; e.onclick=fn; return e; };
 const onActivate = (e, fn) => { e.addEventListener('click',fn); e.addEventListener('keydown',k=>{if(k.key==='Enter'||k.key===' '){k.preventDefault();fn();}}); };
 const groupName = key => copy[lang][key] || D.groups[key] || key;
 const viewName = view => ({system:t('system'),dependencies:t('dependencies'),data:t('dataView'),coverage:t('coverageView')})[view.id] || view.title;
 function localPurpose(n) {
  const defaults={'Source file inventoried; semantic purpose requires agent review.':'sourceInventory','Source-level execution step. Connections show possible syntactic paths, not observed execution.':'syntaxPurpose','Referenced import; installation, version and behavior are unverified.':'externalPurpose','Syntactic I/O candidate; actual resource and operation semantics require review.':'ioPurpose'};
- return defaults[n.purpose] ? t(defaults[n.purpose]) : n.purpose;
+ return defaults[n.purpose] ? t(defaults[n.purpose]) : present(n.purpose);
 }
-function localIO(value) { return value === 'Not established by static inventory.' ? t('unknownIO') : value; }
+function localIO(value) { return value === 'Not established by static inventory.' ? t('unknownIO') : present(value); }
 function localize() {
  document.documentElement.lang=lang; $('language').value=lang;
  document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));
@@ -61,11 +65,11 @@ function inspectNode(id) {
  for(const e of related.slice(0,100)){const other=nodes.get(e.source===id?e.target:e.source);p.append(button((e.source===id?'→ ':'← ')+other.label+' · '+t(e.kind),()=>inspectEdge(e.id),'relation'));}
  if(n.symbols?.length){const d=document.createElement('details');d.append(text('summary',t('symbols')+' · '+n.symbols.length));for(const s of n.symbols)d.append(text('p',s.name+' · '+s.line+'–'+s.end,'path'));p.append(d);}
  evidence(p,n.evidence);
- for(const f of D.findings.filter(f=>f.nodes.includes(id)))p.append(button(f.title,()=>showFinding(f)));
+ for(const f of D.findings.filter(f=>f.nodes.includes(id)))p.append(button(present(f.title),()=>showFinding(f)));
  emphasize(id);hash();window.dispatchEvent(new CustomEvent('arc-selection',{detail:{project:D.project.name,component:id,label:n.label,view:state.view}}));
 }
 function inspectEdge(id) {
- const e=edges.get(id);if(!e)return;state.selected=id;const p=$('inspector');p.replaceChildren(text('span',t(e.kind)+' · '+t(e.status),'badge'),text('h2',e.label));
+ const e=edges.get(id);if(!e)return;state.selected=id;const p=$('inspector');p.replaceChildren(text('span',t(e.kind)+' · '+t(e.status),'badge'),text('h2',present(e.label)));
  for(const role of ['source','target'])p.append(button(t(role==='source'?'from':'to')+': '+nodes.get(e[role]).label,()=>navigateNode(e[role]),'relation'));
  if(state.layout==='tree')p.append(text('p',t(primary.has(id)?'branch':'crossDescription')));
  evidence(p,e.evidence);emphasize(id);
@@ -74,17 +78,17 @@ function showFindings() {
  const p=$('inspector');p.replaceChildren(text('span',t('readOnly'),'badge'),text('h2',t('review')),text('p',t('notRuntime')));
  if(!D.findings.length){p.append(text('p',t('noFindings'),'warning'));return;}
  p.append(button(t('saveAll')+' · '+D.findings.length,()=>openLog(D.findings.map(f=>f.id))));
- for(const f of D.findings){const c=text('div','','finding');c.append(text('p',t(f.severity)+' · '+t(f.status),'severity'));const row=text('div','','row');row.append(button(f.title,()=>showFinding(f)),button('↓',()=>openLog([f.id])));row.lastChild.setAttribute('aria-label',t('saveOne')+' '+f.title);c.append(row);p.append(c);}
+ for(const f of D.findings){const c=text('div','','finding');c.append(text('p',t(f.severity)+' · '+t(f.status),'severity'));const row=text('div','','row');row.append(button(present(f.title),()=>showFinding(f)),button('↓',()=>openLog([f.id])));row.lastChild.setAttribute('aria-label',t('saveOne')+' '+present(f.title));c.append(row);p.append(c);}
 }
 function showFinding(f) {
- const p=$('inspector');p.replaceChildren(button(t('back'),showFindings),text('span',t(f.severity)+' · '+t(f.status),'badge'),text('h2',f.title),button(t('saveOne'),()=>openLog([f.id])));
- for(const [key,value]of [['observation',f.observation],['impact',f.impact],['proposal',f.proposal]])p.append(text('h3',t(key)),text('p',value));
+ const p=$('inspector');p.replaceChildren(button(t('back'),showFindings),text('span',t(f.severity)+' · '+t(f.status),'badge'),text('h2',present(f.title)),button(t('saveOne'),()=>openLog([f.id])));
+ for(const [key,value]of [['observation',f.observation],['impact',f.impact],['proposal',f.proposal]])p.append(text('h3',t(key)),text('p',present(value)));
  for(const id of f.nodes)p.append(button(nodes.get(id).label,()=>navigateNode(id),'relation'));evidence(p,f.evidence);
 }
 function showCoverage() {
  const p=$('inspector');p.replaceChildren(text('h2',t('coverage')),text('p',t(D.coverage.truncated?'truncated':'notTruncated'),'warning'));
  for(const [key,count]of Object.entries(D.coverage.languages))p.append(text('p',key+' · '+count));
- p.append(text('h3',t('limits')));for(const item of D.coverage.limitations)p.append(text('p',item));
+ p.append(text('h3',t('limits')));for(const item of D.coverage.limitations)p.append(text('p',present(item)));
  p.append(text('h3',t('unresolved')+' · '+D.coverage.unresolved.length));for(const x of D.coverage.unresolved.slice(0,60))p.append(text('p',`${x.path}:${x.line} → ${x.reference}`,'path'));
  p.append(text('h3',t('skipped')+' · '+D.coverage.skipped.length));for(const x of D.coverage.skipped.slice(0,60))p.append(text('p',x.path+' · '+x.reason,'path'));
 }
@@ -123,7 +127,7 @@ function labels() {
  for(const e of $('world').querySelectorAll('.node')){const n=drawn.find(n=>n.id===e.dataset.id);const title=e.querySelector('.node-title');title.replaceChildren();title.setAttribute('font-size',size);wrap(n.label,236,size,Math.max(1,Math.min(3,Math.floor((86-sub)/(size*1.1))))).forEach((line,i)=>title.append(svg('tspan',{x:12,y:12+size*.82+i*size*1.1},line)));const meta=e.querySelector('.sub');meta.setAttribute('font-size',sub);meta.textContent=wrap(n.summary?n.count+' '+t('components'):n.language||t(n.status),236,sub,1)[0];}
 }
 function draw(doFit=false) {
- if(!D)return;const view=D.views.find(v=>v.id===state.view)||D.views[0];state.view=view.id;$('view-title').textContent=viewName(view);$('view-title').title=view.description;
+ if(!D)return;const view=D.views.find(v=>v.id===state.view)||D.views[0];state.view=view.id;$('view-title').textContent=viewName(view);$('view-title').title=present(view.description);
  $('map').setAttribute('aria-pressed',state.layout==='map');$('tree').setAttribute('aria-pressed',state.layout==='tree');
  let ids=view.nodes.filter(id=>{const n=nodes.get(id);return !state.hidden.has(n.group)&&(state.confidence==='all'||state.confidence===n.status)&&(!state.search||match(n));});const total=ids.length;ids=ids.slice(0,state.limit);const visible=new Set(ids);
  const root=$('tree-root');root.replaceChildren(new Option(t('auto'),''));ids.forEach(id=>root.add(new Option(nodes.get(id).label,id)));root.value=visible.has(state.root)?state.root:'';
@@ -154,11 +158,11 @@ let fullscreenBefore=null;
 async function canvasMode(){if(!state.fullscreen){fullscreenBefore={x:state.x,y:state.y,scale:state.scale};state.fullscreen=true;document.body.classList.add('canvas-only');$('exit-fullscreen').hidden=false;$('options').open=false;if(!window.ARC_EMBEDDED)try{await document.documentElement.requestFullscreen?.();}catch{}requestAnimationFrame(fit);}else{state.fullscreen=false;document.body.classList.remove('canvas-only');$('exit-fullscreen').hidden=true;if(document.fullscreenElement)try{await document.exitFullscreen();}catch{}requestAnimationFrame(()=>{if(fullscreenBefore)Object.assign(state,fullscreenBefore);transform();});}}
 function download(name,content,mime='text/plain'){const url=URL.createObjectURL(new Blob([content],{type:mime+';charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 let log=null;
-function logRecord(){const records=D.findings.filter(f=>log.ids.has(f.id)).map(f=>({...f,record_status:'RECORDED',source_evidence:f.evidence.map(ref=>({id:ref,...D.evidence[ref]}))}));return {schema_version:1,type:'arc-xray-findings',created_at:log.created,project:D.project,comment:$('log-comment').value,records,limits:t('logLimit')};}
+function logRecord(){const records=D.findings.filter(f=>log.ids.has(f.id)).map(f=>({...f,title:present(f.title),observation:present(f.observation),impact:present(f.impact),proposal:present(f.proposal),record_status:'RECORDED',source_evidence:f.evidence.map(ref=>({id:ref,...D.evidence[ref]}))}));return {schema_version:1,type:'arc-xray-findings',language:lang,created_at:log.created,project:D.project,comment:$('log-comment').value,records,limits:t('logLimit')};}
 function logContent(){const value=logRecord();if($('log-format').value==='json')return JSON.stringify(value,null,2)+'\n';const lines=['# '+D.project.name+' — Arc-XRay','',value.created_at,'',t('recorded'),''];if(value.comment)lines.push(value.comment,'');for(const f of value.records){lines.push('## '+f.title,'',f.id+' · '+t(f.severity)+' · '+t(f.status),'');for(const [k,v]of [['observation',f.observation],['impact',f.impact],['proposal',f.proposal]])lines.push('### '+t(k),'',v,'');for(const e of f.source_evidence)lines.push(`${e.path}:${e.line}–${e.end} · SHA-256 ${e.sha256}`,'',...e.excerpt.split('\n').map(l=>'    '+l),'');}lines.push(value.limits,'');return lines.join('\n');}
 function updateLog(){if(!log)return;$('log-preview').textContent=logContent();$('save-log').disabled=$('download-log').disabled=!log.ids.size;$('save-status').textContent=log.ids.size?log.ids.size+' '+t('findings'):t('logEmpty');}
 function safeName(){return ($('log-filename').value.replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').replace(/[. ]+$/,'').replace(/\.(md|json)$/i,'')||'arc-xray-findings')+'.'+$('log-format').value;}
-function openLog(ids){log={created:new Date().toISOString(),ids:new Set(ids)};$('log-comment').value='';$('log-format').value='md';$('log-filename').value='arc-xray-findings-'+(ids.length===D.findings.length?'all':'selected')+'.md';$('log-items').replaceChildren();for(const f of D.findings){const l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.checked=log.ids.has(f.id);i.onchange=()=>{i.checked?log.ids.add(f.id):log.ids.delete(f.id);updateLog();};l.append(i,document.createTextNode(f.title));$('log-items').append(l);}const picker=typeof window.showSaveFilePicker==='function';$('save-log').hidden=!picker;$('download-log').hidden=picker;$('save-note').textContent=t(picker?'pickerNote':'browserNote');updateLog();$('log-dialog').showModal();$('log-filename').focus();}
+function openLog(ids){log={created:new Date().toISOString(),ids:new Set(ids)};$('log-comment').value='';$('log-format').value='md';$('log-filename').value='arc-xray-findings-'+(ids.length===D.findings.length?'all':'selected')+'.md';$('log-items').replaceChildren();for(const f of D.findings){const l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.checked=log.ids.has(f.id);i.onchange=()=>{i.checked?log.ids.add(f.id):log.ids.delete(f.id);updateLog();};l.append(i,document.createTextNode(present(f.title)));$('log-items').append(l);}const picker=typeof window.showSaveFilePicker==='function';$('save-log').hidden=!picker;$('download-log').hidden=picker;$('save-note').textContent=t(picker?'pickerNote':'browserNote');updateLog();$('log-dialog').showModal();$('log-filename').focus();}
 async function saveLog(){if(!log?.ids.size)return;$('save-log').disabled=true;try{const extension=$('log-format').value,mime=extension==='json'?'application/json':'text/markdown',handle=await window.showSaveFilePicker({suggestedName:safeName(),types:[{description:'Arc-XRay',accept:{[mime]:['.'+extension]}}]});const writer=await handle.createWritable();try{await writer.write(logContent());await writer.close();}catch(error){try{await writer.abort();}catch{}throw error;}$('save-status').textContent=t('saved')+': '+handle.name;}catch(error){$('save-status').textContent=error.name==='AbortError'?t('cancelled'):t('saveError')+error.message;if(error.name!=='AbortError')$('download-log').hidden=false;}finally{$('save-log').disabled=!log.ids.size;}}
 function loadAtlas(data){if(!data||data.schema_version!==1||!Array.isArray(data.nodes)||!data.views?.length)throw new Error('Invalid Arc-XRay atlas');D=data;nodes=new Map(D.nodes.map(n=>[n.id,n]));edges=new Map(D.edges.map(e=>[e.id,e]));state.view=D.views[0].id;state.selected=null;state.search='';state.limit=120;state.hidden.clear();state.collapsed.clear();$('project-name').textContent=D.project.name;document.title=D.project.name+' · Arc-XRay';$('search').value='';try{const [path,query]=location.hash.slice(1).split('?'),parts=path.split('/').map(decodeURIComponent);if(D.views.some(v=>v.id===parts[0]))state.view=parts[0];if(new URLSearchParams(query).get('layout')==='tree')state.layout='tree';navigation();draw(true);home();if(nodes.has(parts[1]))navigateNode(parts[1]);}catch{navigation();draw(true);home();}}
 window.ArcXRay={loadAtlas,state,get data(){return D;},get visible(){return drawn.map(n=>n.id);},get visibleEdges(){return drawnEdges.map(e=>e.id);},get primaryEdges(){return [...primary];},get positions(){return Object.fromEntries(positions);},showHostError(){if(!D){$('inspector').replaceChildren(text('p',t('hostError'),'warning'));}}};

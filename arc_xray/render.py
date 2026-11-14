@@ -6,6 +6,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from .model import validate
+from .localize import localized, translations
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 OWNED_FILES = {"index.html", "atlas.json", "REPORT.md", "COMPONENTS.md", "architecture.drawio", "flows.md", ".arc-xray-output"}
@@ -23,7 +24,8 @@ def html_document(data, language="en", embedded=False):
     bridge = (PACKAGE_ROOT / "viewer/bridge.bundle.js").read_text(encoding="utf-8") if embedded else ""
     icon = base64.b64encode((PACKAGE_ROOT / "assets/arc-xray.png").read_bytes()).decode("ascii")
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
-    return template.replace("__ICON__", icon).replace("/*__STYLE__*/", style).replace("/*__DATA__*/", payload).replace("__LANG__", language).replace("__EMBEDDED__", str(embedded).lower()).replace("/*__APP__*/", app.replace("</script", "<\\/script")).replace("/*__BRIDGE__*/", bridge.replace("</script", "<\\/script"))
+    messages = json.dumps(translations(), ensure_ascii=False).replace("<", "\\u003c")
+    return template.replace("__ICON__", icon).replace("/*__STYLE__*/", style).replace("/*__DATA__*/", payload).replace("/*__TRANSLATIONS__*/", messages).replace("__LANG__", language).replace("__EMBEDDED__", str(embedded).lower()).replace("/*__APP__*/", app.replace("</script", "<\\/script")).replace("/*__BRIDGE__*/", bridge.replace("</script", "<\\/script"))
 
 
 def drawio_document(data):
@@ -55,7 +57,7 @@ def drawio_document(data):
 
 def mermaid_document(data):
     nodes, edges = {n["id"]: n for n in data["nodes"]}, {e["id"]: e for e in data["edges"]}
-    out = ["# Arc-XRay — architecture views", "", "Arrow key: solid = data, dashed = control, dotted = dependency. Source evidence is in atlas.json.", ""]
+    out = ["# Arc-XRay — architecture views", "", "Arrow key: solid = data, thick = control, dotted = dependency. Source evidence is in atlas.json.", ""]
     for view in data["views"]:
         selected = view["nodes"][:80]
         names = {key: "n" + str(i) for i, key in enumerate(selected)}
@@ -69,7 +71,7 @@ def mermaid_document(data):
         for key in view["edges"]:
             e = edges[key]
             if e["source"] in names and e["target"] in names:
-                arrow = "-->" if e["kind"] == "data" else "-.->"
+                arrow = {"data": "-->", "control": "==>", "dependency": "-.->"}[e["kind"]]
                 out.append(f"  {names[e['source']]} {arrow}|{e['kind']}| {names[e['target']]}")
         out += ["```", ""]
     return "\n".join(out)
@@ -80,11 +82,12 @@ def markdown_report(data, language):
     title = "Отчёт об архитектуре" if ru else "Architecture review"
     out = [f"# {data['project']['name']} — {title}", "", data["project"]["created_at"], "",
         "Аудит исходников без запуска и изменений кода." if ru else "Read-only source audit. Project code was not executed.", "",
-        f"{data['coverage']['analyzed_files']} files · {len(data['nodes'])} components · {len(data['edges'])} relationships · {len(data['findings'])} observations.", "",
+        (f"{data['coverage']['analyzed_files']} файлов · {len(data['nodes'])} компонентов · {len(data['edges'])} связей · {len(data['findings'])} наблюдений." if ru else
+         f"{data['coverage']['analyzed_files']} files · {len(data['nodes'])} components · {len(data['edges'])} relationships · {len(data['findings'])} observations."), "",
         ("Смысловое ревью агента добавлено." if ru else "Includes agent semantic review.") if data["project"]["agent_review"] else
         ("Это автоматическое исследование; смысловое ревью агента ещё не добавлено." if ru else "Automatic survey only; semantic agent review has not been added."), "",
         "## Покрытие и ограничения" if ru else "## Coverage and limitations", "",
-        "File/byte limit reached: " + str(data["coverage"]["truncated"]), ""]
+        ("Достигнут предел файлов/размера: " if ru else "File/byte limit reached: ") + str(data["coverage"]["truncated"]), ""]
     out += ["- " + limit for limit in data["coverage"]["limitations"]]
     out += ["", "## Риски и несоответствия" if ru else "## Risks and inconsistencies", ""]
     if not data["findings"]:
@@ -133,8 +136,9 @@ def render(data, output, *, language="en"):
         if (output / name).is_symlink():
             raise ValueError("Generated files cannot be symbolic links")
     # Build before touching the output, so a missing bundled viewer cannot leave a partial run.
+    narrative = localized(data, language)
     content = {"index.html": html_document(data, language), "atlas.json": json.dumps(data, ensure_ascii=False, indent=2) + "\n",
-        "REPORT.md": markdown_report(data, language), "COMPONENTS.md": component_document(data, language),
+        "REPORT.md": markdown_report(narrative, language), "COMPONENTS.md": component_document(narrative, language),
         "architecture.drawio": drawio_document(data), "flows.md": mermaid_document(data), ".arc-xray-output": MARKER}
     output.mkdir(parents=True, exist_ok=True)
     for name, value in content.items():
