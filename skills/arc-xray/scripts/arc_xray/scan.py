@@ -9,6 +9,7 @@ import re
 
 from .model import add_evidence, identity, validate
 from .review import finding, review_graph
+from . import __version__
 
 EXTENSIONS = {".py": "Python", ".js": "JavaScript", ".jsx": "JavaScript", ".mjs": "JavaScript", ".cjs": "JavaScript",
     ".ts": "TypeScript", ".tsx": "TypeScript", ".gd": "GDScript", ".go": "Go", ".rs": "Rust", ".cs": "C#",
@@ -46,7 +47,7 @@ def scan(root, *, name=None, max_files=2000, max_bytes=256_000, max_total=24_000
     if not 1 <= max_files <= 5000 or not 1 <= max_bytes <= 256_000 or not 1 <= max_total <= 48_000_000:
         raise ValueError("Scan bounds exceed supported limits")
     data = {"schema_version": 1, "project": {"name": name or root.name, "created_at": datetime.now(timezone.utc).isoformat(),
-        "agent_review": False, "source_root": ".", "mode": "static-read-only"},
+        "agent_review": False, "source_root": ".", "mode": "static-read-only", "generator_version": __version__, "viewer_id": "arc-xray-blue-v1"},
         "groups": {"entry": "Entrypoints", "modules": "Implementation", "tests": "Tests", "config": "Configuration",
                    "docs": "Documentation", "external": "External dependencies", "storage": "Data / I/O", "flow": "Execution steps"},
         "nodes": [], "edges": [], "evidence": {}, "findings": [], "views": [],

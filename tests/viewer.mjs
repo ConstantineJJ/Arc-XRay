@@ -1,5 +1,4 @@
 import {chromium} from 'playwright';
-import {build} from 'esbuild';
 import {execFileSync} from 'node:child_process';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -11,7 +10,6 @@ const python=process.env.ARC_XRAY_PYTHON || 'python';
 const out=resolve('.test-output');await mkdir(out,{recursive:true});
 for(const [project,dir]of [['python-service','python'],['typescript-service','typescript']])
  execFileSync(python,['-B','arc-xray.py','audit','examples/'+project,'--out',out+'/'+dir],{stdio:'pipe'});
-execFileSync(python,['-B','-c',"from arc_xray.render import html_document; from pathlib import Path; Path('.test-output/app.html').write_text(html_document(None, embedded=True), encoding='utf-8')"],{stdio:'pipe'});
 const edge='C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const browser=await chromium.launch({headless:true,...(process.env.ARC_XRAY_BROWSER?{executablePath:process.env.ARC_XRAY_BROWSER}:existsSync(edge)?{executablePath:edge}:{})});
 const checks=[],errors=[];const check=(name,fn)=>{assert.ok(fn,name);checks.push(name);};
@@ -50,14 +48,21 @@ try {
  await page.screenshot({path:out+'/atlas-fhd.png'});
  for(const size of [{width:3840,height:2160},{width:1440,height:900},{width:768,height:1024},{width:375,height:812},{width:320,height:700}]){await page.setViewportSize(size);await page.waitForTimeout(80);check('responsive '+size.width,await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));}
  await page.setViewportSize({width:1440,height:900});await page.goto(pathToFileURL(out+'/typescript/index.html').href);await page.waitForSelector('.node');check('TypeScript project renders',await page.evaluate(()=>ArcXRay.data.coverage.languages.TypeScript)===3);
- // Standard SDK host harness: real AppBridge <-> App postMessage handshake and tool-result delivery.
- await build({stdin:{contents:`import {AppBridge,PostMessageTransport} from '@modelcontextprotocol/ext-apps/app-bridge';window.makeBridge=async function(iframe,atlas){const bridge=new AppBridge(null,{name:'Arc-XRay test host',version:'1.0.0'},{updateModelContext:{structuredContent:{}}},{hostContext:{theme:'dark',displayMode:'inline'}});bridge.oninitialized=()=>{bridge.sendToolResult({content:[],_meta:{atlas}});window.bridgeReady=true;};bridge.onupdatemodelcontext=()=>({});await bridge.connect(new PostMessageTransport(iframe.contentWindow,iframe.contentWindow));window.testBridge=bridge;};`,resolveDir:process.cwd()},bundle:true,format:'iife',platform:'browser',write:false}).then(async result=>{
-  await page.goto('about:blank');await page.setContent('<iframe id="app" style="width:1200px;height:750px;border:0"></iframe>');await page.addScriptTag({content:result.outputFiles[0].text});await page.evaluate(async({html,atlas})=>{const frame=document.querySelector('#app');await window.makeBridge(frame,atlas);frame.srcdoc=html;},{html:await readFile(out+'/app.html','utf8'),atlas:source});
- });
- const frame=page.frameLocator('#app');await frame.locator('.node').first().waitFor({timeout:15000});check('embedded MCP App handshake and tool-result render',await frame.locator('.node').count()===source.views[0].nodes.length);
- await frame.locator('.node').first().click();await frame.locator('#inspector details:has(pre) summary').first().click();check('embedded source inspection',await frame.locator('#inspector').innerText().then(s=>s.includes('SHA-256')));
- await page.screenshot({path:out+'/atlas-embedded.png'});
+ // The host preview receives the exact same autonomous HTML, not another renderer.
+ const canonicalHtml=await readFile(out+'/python/index.html','utf8');
+ await page.goto('about:blank');await page.setContent('<iframe id="app" style="width:1200px;height:750px;border:0"></iframe>');
+ await page.locator('#app').evaluate((iframe,html)=>iframe.srcdoc=html,canonicalHtml);
+ const frame=page.frameLocator('#app');await frame.locator('.node').first().waitFor();
+ check('same HTML renders in host-style preview',await frame.locator('.node').count()===source.views[0].nodes.length);
+ check('preview has identical full architecture model',await frame.locator('body').evaluate(()=>JSON.stringify(ArcXRay.data))===JSON.stringify(source));
+ check('canonical blue UI in preview',await frame.locator('body').evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--bg').trim())==='#182338');
+ await frame.locator('.node').first().click();await frame.locator('#inspector details:has(pre) summary').first().click();check('preview source inspection',await frame.locator('#inspector').innerText().then(s=>s.includes('SHA-256')));
+ await page.screenshot({path:out+'/atlas-preview-host.png'});
+ const large=structuredClone(source);large.nodes=Array.from({length:180},(_,i)=>({...source.nodes[0],id:'large-'+i,group:'modules',label:'Component '+i}));large.edges=[];large.views=[{id:'system',title:'Large project',description:'Synthetic coverage fixture',nodes:large.nodes.map(n=>n.id),edges:[]}];
+ await frame.locator('body').evaluate((_,data)=>ArcXRay.loadAtlas(data),large);
+ check('large graph groups all nodes without truncation',await frame.locator('body').evaluate(()=>ArcXRay.data.nodes.length)===180 && (await frame.locator('#counts').innerText()).includes('180 / 180'));
+ await frame.locator('#options summary').click();await frame.locator('#expand').click();check('all grouped components can be expanded',await frame.locator('.node').count()===180);
  check('no browser script errors',errors.length===0);
- await writeFile(out+'/browser-verification.json',JSON.stringify({status:'PASS',checks,errors,remoteRequests:remote,hostAcceptance:'Standard SDK host harness verified; actual ChatGPT account/client acceptance is separate.'},null,2));
+ await writeFile(out+'/browser-verification.json',JSON.stringify({status:'PASS',checks,errors,remoteRequests:remote,hostAcceptance:'Same canonical HTML/model verified in an iframe preview without MCP; actual Chat host invocation remains separate.'},null,2));
  console.log(JSON.stringify({status:'PASS',checks:checks.length,errors}));
 } finally {await browser.close();}

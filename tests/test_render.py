@@ -1,3 +1,4 @@
+import _paths
 import json
 import re
 from pathlib import Path
@@ -52,10 +53,11 @@ class RenderTests(unittest.TestCase):
                 render(data, root)
             self.assertEqual((root / "index.html").read_text(), "Owner file")
 
-    def test_mcp_document_waits_for_tool_result(self):
-        html = html_document(None, "en", embedded=True)
+    def test_preview_uses_same_data_document_without_server(self):
+        html = html_document(None, "en")
         self.assertIn("Arc-XRay", html)
-        self.assertIn("ontoolresult", html)
+        self.assertIn("ArcXRay", html)
+        self.assertNotIn("mcp-app", html)
         self.assertNotIn("/*__DATA__*/", html)
 
     def test_output_resolves_parent_alias_without_replacing_link_destination(self):

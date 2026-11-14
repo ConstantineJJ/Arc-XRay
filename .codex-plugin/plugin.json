@@ -1,23 +1,29 @@
 {
   "name": "arc-xray",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Read-only architecture atlases and source-backed review.",
-  "author": {"name": "ConstantineJJ"},
+  "author": {
+    "name": "ConstantineJJ"
+  },
   "homepage": "https://github.com/ConstantineJJ/Arc-XRay",
   "repository": "https://github.com/ConstantineJJ/Arc-XRay.git",
   "license": "MIT",
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Arc-XRay",
     "shortDescription": "Explore your architecture",
-    "longDescription": "Source-backed architecture atlases for user-selected local projects. Offline HTML and an embedded MCP App viewer.",
+    "longDescription": "Independent source-backed architecture review with one canonical blue interactive atlas in Chat and Work. No MCP server or connector required. Includes a self-contained skill runtime, index.html, source evidence, five-area completion gate, risks, logs, draw.io and Mermaid. Source access and a host Python/file environment are required; unsupported environments are reported explicitly.",
     "developerName": "ConstantineJJ",
     "category": "Developer Tools",
-    "capabilities": ["Interactive"],
-    "defaultPrompt": ["Create a read-only architecture atlas for this project.", "Review architectural risks and connect each observation to source evidence."],
-    "logo": "./assets/arc-xray.png",
-    "composerIcon": "./assets/arc-xray.png",
-    "brandColor": "#13D3C4"
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Create a read-only architecture atlas for this project.",
+      "Review architectural risks and connect each observation to source evidence."
+    ],
+    "logo": "./skills/arc-xray/assets/arc-xray.png",
+    "composerIcon": "./skills/arc-xray/assets/arc-xray.png",
+    "brandColor": "#79CFF7"
   }
 }

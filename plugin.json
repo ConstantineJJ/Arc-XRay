@@ -1,26 +1,40 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "arc-xray",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Read-only, source-backed architecture audits with interactive maps, execution sketches, editable diagrams and evidence-based review.",
-  "author": {"name": "ConstantineJJ", "url": "https://github.com/ConstantineJJ"},
+  "author": {
+    "name": "ConstantineJJ",
+    "url": "https://github.com/ConstantineJJ"
+  },
   "homepage": "https://github.com/ConstantineJJ/Arc-XRay",
   "repository": "https://github.com/ConstantineJJ/Arc-XRay.git",
   "license": "MIT",
-  "keywords": ["architecture", "audit", "visualization", "dependencies", "mcp-apps"],
+  "keywords": [
+    "architecture",
+    "audit",
+    "visualization",
+    "dependencies",
+    "standalone"
+  ],
   "extensions": {
     "com.openai": {
       "interface": {
         "displayName": "Arc-XRay",
         "shortDescription": "Explore your architecture",
-        "longDescription": "Inspect a user-selected project without executing its code. Create a standalone index.html and explore the same source-backed graph in an MCP Apps client. Includes map/tree layouts, source evidence, qualified architecture risks, finding logs, draw.io and Mermaid. Local Python runtime required; web/mobile need a separately accessible runtime and source access.",
+        "longDescription": "Independent source-backed architecture review with one canonical blue interactive atlas in Chat and Work. No MCP server or connector required. Includes a self-contained skill runtime, index.html, source evidence, five-area completion gate, risks, logs, draw.io and Mermaid. Source access and a host Python/file environment are required; unsupported environments are reported explicitly.",
         "developerName": "ConstantineJJ",
         "category": "Developer Tools",
-        "capabilities": ["Interactive"],
-        "defaultPrompt": ["Create a read-only architecture atlas for this project.", "Review architectural risks and connect each observation to source evidence."],
-        "logo": "./assets/arc-xray.png",
-        "composerIcon": "./assets/arc-xray.png",
-        "brandColor": "#13D3C4"
+        "capabilities": [
+          "Interactive"
+        ],
+        "defaultPrompt": [
+          "Create a read-only architecture atlas for this project.",
+          "Review architectural risks and connect each observation to source evidence."
+        ],
+        "logo": "./skills/arc-xray/assets/arc-xray.png",
+        "composerIcon": "./skills/arc-xray/assets/arc-xray.png",
+        "brandColor": "#79CFF7"
       }
     }
   }

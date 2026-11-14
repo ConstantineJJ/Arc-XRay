@@ -1,12 +1,10 @@
 # Semantic enrichment contract (schema v1)
 
-The initial scan returns an atlas_id and writes atlas.json. Inspect that file with
-host file tools to find node/evidence IDs. If using MCP, the complete graph is in
-the tool result's private UI metadata; the model-facing result is intentionally
-compact. Use the generated index_html path's sibling atlas.json when available.
+The initial `audit` writes atlas.json. Inspect it with host file tools to find
+node/evidence IDs. All execution uses scripts/arc-xray.py inside this skill.
 
-Supply a JSON object to `arc_xray_enrich(atlas_id, review)` or the CLI's
-`--enrichment FILE`. Existing nodes/edges/findings are retained. New IDs must be
+Supply a review JSON to the CLI's `review --review-file` or `audit --enrichment`.
+Existing nodes/edges/findings are retained. New IDs must be
 unique. Enrichment views must include both endpoints of every listed edge.
 
 ```json
@@ -50,3 +48,23 @@ group, which belongs in explicit execution views. Reuse the actual node IDs.
 The renderer rejects missing references and evidence but cannot verify that an
 agent's interpretation follows logically from a quoted line. Human-readable
 reasoning and inspection of representative links remain part of acceptance.
+
+## Mandatory completion assessment (0.2)
+
+`--finalize` and `validate --require-complete` require an `assessment` object with
+five keys: `architecture`, `dependencies`, `data`, `execution`, `review`.
+Each contains `status` (`reviewed`, `partial`, `unknown`), a substantive `summary`
+and `evidence` in the same format as nodes/edges. Only `reviewed` passes completion.
+
+`execution.paths` must also contain `success`, `error`, `retry_or_cancellation`.
+Each needs a summary, source evidence, and `reviewed` or `not_applicable`. Explain
+why a path is not applicable; do not invent a retry/cancellation mechanism.
+
+Every inventoried implementation module outside tests needs `node_updates`
+covering purpose, inputs and outputs with real evidence. A cut-short scan or
+unreadable file blocks completion. Exclusions must be explicit source scope,
+not a trick to bypass missing review. Unknown semantics stay documented.
+
+The example `examples/python-review.json` in the source repository demonstrates
+all required fields on a three-module service. The gate checks recorded coverage
+and references; it does not independently prove the agent's interpretation.

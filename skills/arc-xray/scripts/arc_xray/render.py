@@ -1,5 +1,6 @@
-"""Offline and embedded renderers for the same versioned atlas model."""
+"""Single offline renderer for browser and host HTML previews."""
 import base64
+import copy
 import html
 import json
 import re
@@ -8,13 +9,15 @@ import xml.etree.ElementTree as ET
 
 from .model import validate
 from .localize import localized, translations
+from .assess import assess
+from . import __version__
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 OWNED_FILES = {"index.html", "atlas.json", "REPORT.md", "COMPONENTS.md", "architecture.drawio", "flows.md", ".arc-xray-output"}
 MARKER = "Arc-XRay generated output v1\n"
 
 
-def html_document(data, language="en", embedded=False):
+def html_document(data, language="en"):
     if language not in {"en", "ru"}:
         raise ValueError("Language must be en or ru")
     if data is not None:
@@ -22,13 +25,12 @@ def html_document(data, language="en", embedded=False):
     template = (PACKAGE_ROOT / "viewer/index.html").read_text(encoding="utf-8")
     style = (PACKAGE_ROOT / "viewer/style.css").read_text(encoding="utf-8")
     app = (PACKAGE_ROOT / "viewer/app.js").read_text(encoding="utf-8")
-    bridge = (PACKAGE_ROOT / "viewer/bridge.bundle.js").read_text(encoding="utf-8") if embedded else ""
-    icon = base64.b64encode((PACKAGE_ROOT / "assets/arc-xray.png").read_bytes()).decode("ascii")
+    icon = base64.b64encode((PACKAGE_ROOT.parent / "assets/arc-xray.png").read_bytes()).decode("ascii")
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     messages = json.dumps(translations(), ensure_ascii=False).replace("<", "\\u003c")
     replacements = {"__ICON__": icon, "/*__STYLE__*/": style, "/*__DATA__*/": payload,
-        "/*__TRANSLATIONS__*/": messages, "__LANG__": language, "__EMBEDDED__": str(embedded).lower(),
-        "/*__APP__*/": app.replace("</script", "<\\/script"), "/*__BRIDGE__*/": bridge.replace("</script", "<\\/script")}
+        "/*__TRANSLATIONS__*/": messages, "__LANG__": language,
+        "/*__APP__*/": app.replace("</script", "<\\/script")}
     # Substitute only original template tokens. Source excerpts may themselves
     # contain these strings and must remain data rather than a second template.
     pattern = "|".join(re.escape(key) for key in replacements)
@@ -36,7 +38,7 @@ def html_document(data, language="en", embedded=False):
 
 
 def drawio_document(data):
-    root = ET.Element("mxfile", {"host": "Arc-XRay", "version": "0.1.0"})
+    root = ET.Element("mxfile", {"host": "Arc-XRay", "version": __version__})
     nodes = {n["id"]: n for n in data["nodes"]}
     edges = {e["id"]: e for e in data["edges"]}
     for view in data["views"]:
@@ -95,6 +97,12 @@ def markdown_report(data, language):
         ("Это автоматическое исследование; смысловое ревью агента ещё не добавлено." if ru else "Automatic survey only; semantic agent review has not been added."), "",
         "## Покрытие и ограничения" if ru else "## Coverage and limitations", "",
         ("Достигнут предел файлов/размера: " if ru else "File/byte limit reached: ") + str(data["coverage"]["truncated"]), ""]
+    completion = assess(data)
+    out += ["**" + ("Полнота ревью: " if ru else "Review completeness: ") + completion["status"] + "**", "",
+            f"{completion['reviewed_modules']} / {completion['implementation_modules']} " + ("модулей реализации исследовано агентом." if ru else "implementation modules semantically reviewed."), ""]
+    for area, item in data.get("assessment", {}).items():
+        out += [f"- **{area} · {item['status']}**: {item['summary']}"]
+    out += ["", *["- " + gap for gap in completion["gaps"]], ""]
     out += ["- " + limit for limit in data["coverage"]["limitations"]]
     out += ["", "## Риски и несоответствия" if ru else "## Risks and inconsistencies", ""]
     if not data["findings"]:
@@ -127,6 +135,9 @@ def component_document(data, language):
 
 def render(data, output, *, language="en"):
     validate(data)
+    data = copy.deepcopy(data)
+    data["completion"] = assess(data)
+    data["project"].update({"viewer_id": "arc-xray-blue-v1", "generator_version": __version__})
     output = Path(output)
     # Resolve user-selected ancestors, including macOS /var -> /private/var.
     # The output directory itself and generated files must not be links, and

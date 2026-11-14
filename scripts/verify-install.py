@@ -16,7 +16,7 @@ def main():
     if not codex:
         print(json.dumps({"status": "SKIP", "reason": "Codex CLI not installed"}))
         return
-    archive = ROOT / "dist/arc-xray-0.1.0.zip"
+    archive = ROOT / "dist/arc-xray-0.2.0.zip"
     with tempfile.TemporaryDirectory(prefix="arc-xray-install-") as tmp:
         base = Path(tmp)
         market = base / "marketplace"
@@ -44,17 +44,18 @@ def main():
         installed = Path(logs[1]["installedPath"])
         doctor = subprocess.run([sys.executable, "-B", str(installed / "arc-xray.py"), "doctor"], capture_output=True, text=True, timeout=15)
         assert doctor.returncode == 0, doctor.stderr
-        requests = [{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}},
-                    {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
-                    {"jsonrpc": "2.0", "id": 3, "method": "resources/read", "params": {"uri": "ui://arc-xray/atlas"}}]
-        startup = subprocess.run([sys.executable, "-B", str(installed / "arc-xray.py"), "mcp", "--data-dir", str(base / "data")],
-                                 input="\n".join(json.dumps(r) for r in requests) + "\n", capture_output=True, text=True, timeout=15)
-        responses = [json.loads(line) for line in startup.stdout.splitlines()]
-        assert startup.returncode == 0 and len(responses) == 3, startup.stderr
-        assert len(responses[1]["result"]["tools"]) == 4
-        assert "ontoolresult" in responses[2]["result"]["contents"][0]["text"]
-        result = {"status": "PASS", "steps": ["marketplace registered", "plugin installed", "plugin listed", "installed launcher executed", "installed MCP discovered four tools and UI resource"],
-                  "native_client_render": "not exercised by CLI install", "results": logs, "doctor": json.loads(doctor.stdout)}
+        # Copy only the skill, as in a Chat code environment exposing skill resources.
+        standalone = base / "standalone-skill"
+        shutil.copytree(installed / "skills/arc-xray", standalone)
+        output_atlas = base / "standalone-output"
+        run = subprocess.run([sys.executable, "-B", str(standalone / "scripts/arc-xray.py"), "audit", str(ROOT / "examples/python-service"), "--out", str(output_atlas), "--enrichment", str(ROOT / "examples/python-review.json"), "--finalize"], capture_output=True, text=True, timeout=30)
+        assert run.returncode == 0, run.stderr
+        graph = json.loads((output_atlas / "atlas.json").read_text(encoding="utf-8"))
+        assert graph["completion"]["status"] == "complete"
+        assert graph["project"]["viewer_id"] == "arc-xray-blue-v1"
+        assert not (installed / "mcp.json").exists() and not (installed / ".mcp.json").exists()
+        result = {"status": "PASS", "steps": ["marketplace registered", "plugin installed", "installed launcher executed", "skill-only runtime created complete audit without MCP"],
+                  "native_chat_invocation": "not exercised by CLI install", "results": logs, "doctor": json.loads(doctor.stdout)}
         output = ROOT / ".test-output/install-verification.json"
         output.parent.mkdir(exist_ok=True)
         output.write_text(json.dumps(result, indent=2), encoding="utf-8")

@@ -10,26 +10,24 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "skills/arc-xray/scripts"))
 from arc_xray import __version__
 
-FILES = ["plugin.json", "mcp.json", ".mcp.json", ".codex-plugin/plugin.json", "arc-xray.py", "LICENSE",
-         "THIRD_PARTY_NOTICES.md", "README.md", "README.ru.md"]
-DIRECTORIES = ["arc_xray", "viewer", "assets", "skills", "docs"]
+FILES = ["plugin.json", ".codex-plugin/plugin.json", "arc-xray.py", "LICENSE", "README.md", "README.ru.md", "CHANGELOG.md", "install.sh", "install.ps1"]
+DIRECTORIES = ["skills", "docs"]
 
 
 def package():
     manifest = json.loads((ROOT / "plugin.json").read_text(encoding="utf-8"))
     compat = json.loads((ROOT / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
-    mcp = json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))
     assert manifest["$schema"] == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
-    assert mcp["$schema"] == "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json"
     assert manifest["name"] == compat["name"] == "arc-xray"
     assert manifest["version"] == compat["version"] == __version__
     interface = manifest["extensions"]["com.openai"]["interface"]
     assert len(interface["shortDescription"]) <= 30
     assert interface["category"] == compat["interface"]["category"] == "Developer Tools"
     assert compat["interface"]["defaultPrompt"] == interface["defaultPrompt"]
+    assert not compat.get("mcpServers") and not (ROOT / "mcp.json").exists() and not (ROOT / ".mcp.json").exists()
     assert not manifest.get("apps") and not manifest["extensions"]["com.openai"].get("apps") and not compat.get("apps")
     for field in ("logo", "composerIcon"):
         path = (ROOT / interface[field]).resolve()
@@ -68,7 +66,9 @@ def package():
         names = archive.namelist()
         assert all(name.startswith("arc-xray/") for name in names)
         assert "arc-xray/skills/arc-xray/SKILL.md" in names
-        assert "arc-xray/viewer/bridge.bundle.js" in names
+        assert "arc-xray/skills/arc-xray/scripts/viewer/app.js" in names
+        assert "arc-xray/skills/arc-xray/scripts/arc_xray/scan.py" in names
+        assert not any(name.endswith(("mcp.json", "server.py", "bridge.bundle.js")) for name in names)
         assert not any("marketplace" in name or ".app.json" in name for name in names)
         archived = json.loads(archive.read("arc-xray/plugin.json"))
         assert archived == manifest

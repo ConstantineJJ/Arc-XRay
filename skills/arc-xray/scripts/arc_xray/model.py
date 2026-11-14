@@ -50,6 +50,10 @@ def add_evidence(data, path, raw, line=1, end=None):
 def validate(data):
     if data.get("schema_version") != 1:
         raise ValueError("Unsupported atlas schema")
+    for area in data.get("assessment", {}).values():
+        for item in (area, *area.get("paths", {}).values()):
+            if not item.get("evidence") or any(ref not in data["evidence"] for ref in item["evidence"]):
+                raise ValueError("Invalid assessment evidence")
     for anchor in data["evidence"].values():
         name = anchor["path"]
         if not isinstance(name, str) or PurePosixPath(name).is_absolute() or ".." in PurePosixPath(name).parts or ":" in name or "\\" in name:
@@ -144,11 +148,22 @@ def enrich(data, patch, root):
             item["evidence"] = refs(item.get("evidence", []))
             item.setdefault("status", "inference")
             result[bucket].append(item)
+    new_views = []
     for view in patch.get("views", []):
         if any(v["id"] == view["id"] for v in result["views"]):
             raise ValueError("Enrichment view id already exists")
-        result["views"].append(copy.deepcopy(view))
-    result["project"]["agent_review"] = True
+        new_views.append(copy.deepcopy(view))
+    result["views"] = new_views + result["views"]
+    for name, area in patch.get("assessment", {}).items():
+        from .assess import AREAS
+        if name not in AREAS or area.get("status") not in {"reviewed", "partial", "unknown"}:
+            raise ValueError("Invalid assessment area or status")
+        area = copy.deepcopy(area)
+        area["evidence"] = refs(area.get("evidence", []))
+        for path in area.get("paths", {}).values():
+            path["evidence"] = refs(path.get("evidence", []))
+        result.setdefault("assessment", {})[name] = area
+    result["project"]["agent_review"] = bool(result.get("assessment") or any(n.get("semantic_review") for n in result["nodes"]))
     # Include manually added components/edges in the global graph.
     for view in result["views"]:
         if view["id"] == "system":

@@ -7,10 +7,8 @@
   runtime acceptance are different evidence levels. No invented performance claims.
 - Keep exported paths project-relative. No personal projects, Tools_C-specific
   findings, private logs, credentials or machine state in this repository/package.
-- Python runtime must stay standard-library only. Viewer must work offline from
-  file://. The official MCP Apps bridge is prebuilt; update its lockfile and notices
-  together using `npm run build:bridge`.
+- Runtime/viewer/assets live inside skills/arc-xray/. The plugin has no MCP or server dependency. Use one canonical blue HTML renderer for Chat, Work and browsers. Never hand-author a substitute simplified UI. Python stays standard-library only.
 - Verify: `python -B -m unittest discover -s tests -v`, `npm run test:ui`,
   `python -B scripts/package.py`. Keep native-client acceptance separate from the
-  standard SDK test host. Do not claim public directory approval from a valid ZIP.
+  HTML preview harness. Do not claim public directory approval from a valid ZIP.
 - Preserve the supplied assets/arc-xray.png; do not regenerate the user's artwork.
