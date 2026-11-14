@@ -1,0 +1,14 @@
+{
+  "node_updates": [
+    {"id":"file-b10564ab7d2c520c","purpose":"CLI entrypoint for the synthetic request-processing service. The main guard delegates to service.run.","inputs":"Process startup; no command-line arguments are read.","outputs":"Invokes the request-processing loop; no return value is consumed.","evidence":[{"path":"main.py","line":5,"end":8}]},
+    {"id":"file-3a47b4c168e35e57","purpose":"Consumes pending requests, selects enabled entries, evaluates their expressions and delegates persistence. Broad exceptions are discarded.","inputs":"Iterable of request dictionaries from storage.pending; enabled and expression fields.","outputs":"Calls storage.save for successful results. Failed requests are silently skipped; no result is returned.","evidence":[{"path":"service.py","line":5,"end":16}]},
+    {"id":"file-a1945832a9b4ca40","purpose":"Storage adapter. pending currently returns an empty list; save converts a result to text and replaces result.txt. Imports service even though it is not referenced elsewhere in this file.","inputs":"Result object passed by service.run.","outputs":"UTF-8 text in result.txt, relative to the process working directory. pending returns an empty list.","evidence":[{"path":"storage.py","line":2,"end":11}]}
+  ],
+  "edges": [
+    {"id":"review-results-to-storage","source":"file-3a47b4c168e35e57","target":"file-a1945832a9b4ca40","kind":"data","label":"Evaluated request result → save(result)","status":"verified","evidence":[{"path":"service.py","line":9,"end":10}]},
+    {"id":"review-pending-to-service","source":"file-a1945832a9b4ca40","target":"file-3a47b4c168e35e57","kind":"data","label":"pending() iterable → processing loop","status":"verified","evidence":[{"path":"storage.py","line":6,"end":7},{"path":"service.py","line":5,"end":6}]}
+  ],
+  "findings": [
+    {"id":"review-overwrite-policy","rule":"agent-retention-review","title":"Every successful result replaces the same output file","severity":"medium","status":"inference","observation":"storage.save calls Path('result.txt').write_text for every result. service.run calls save inside its processing loop.","impact":"If pending is changed to yield several enabled requests, later results replace earlier results. The current pending implementation returns an empty list, so that path produces no writes as shipped.","proposal":"Confirm whether the intended contract is latest-result storage or retained per-request history before changing persistence.","nodes":["file-3a47b4c168e35e57","file-a1945832a9b4ca40"],"evidence":[{"path":"service.py","line":5,"end":10},{"path":"storage.py","line":6,"end":11}]}
+  ]
+}
