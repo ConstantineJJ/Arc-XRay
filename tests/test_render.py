@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -9,6 +10,15 @@ from arc_xray.render import render, html_document
 
 
 class RenderTests(unittest.TestCase):
+    def test_source_template_tokens_are_not_interpreted_during_rendering(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "main.py").write_text('"""Contains /*__APP__*/ and __LANG__ as source evidence."""\n', encoding="utf-8")
+            data = scan(root)
+            html = html_document(data, "ru")
+            embedded = re.search(r'<script id="atlas-data" type="application/json">(.*?)</script>', html, re.S).group(1)
+            self.assertEqual(json.loads(embedded), data)
+
     def test_artifacts_are_self_contained_and_xml_edges_match(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "project"

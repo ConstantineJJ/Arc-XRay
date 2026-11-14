@@ -2,6 +2,7 @@
 import base64
 import html
 import json
+import re
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -25,7 +26,13 @@ def html_document(data, language="en", embedded=False):
     icon = base64.b64encode((PACKAGE_ROOT / "assets/arc-xray.png").read_bytes()).decode("ascii")
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     messages = json.dumps(translations(), ensure_ascii=False).replace("<", "\\u003c")
-    return template.replace("__ICON__", icon).replace("/*__STYLE__*/", style).replace("/*__DATA__*/", payload).replace("/*__TRANSLATIONS__*/", messages).replace("__LANG__", language).replace("__EMBEDDED__", str(embedded).lower()).replace("/*__APP__*/", app.replace("</script", "<\\/script")).replace("/*__BRIDGE__*/", bridge.replace("</script", "<\\/script"))
+    replacements = {"__ICON__": icon, "/*__STYLE__*/": style, "/*__DATA__*/": payload,
+        "/*__TRANSLATIONS__*/": messages, "__LANG__": language, "__EMBEDDED__": str(embedded).lower(),
+        "/*__APP__*/": app.replace("</script", "<\\/script"), "/*__BRIDGE__*/": bridge.replace("</script", "<\\/script")}
+    # Substitute only original template tokens. Source excerpts may themselves
+    # contain these strings and must remain data rather than a second template.
+    pattern = "|".join(re.escape(key) for key in replacements)
+    return re.sub(pattern, lambda match: replacements[match.group()], template)
 
 
 def drawio_document(data):
