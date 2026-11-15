@@ -3,6 +3,8 @@
 | Area | Implemented | Honest boundary |
 |---|---|---|
 | Plugin | Self-contained skill with Python, viewer and icon | No MCP dependency; host must expose files, source and code execution |
+| Installation | One-line PowerShell/Bash installer; Windows desktop CLI discovery outside PATH | Codex with plugin support and Git must already exist; shell syntax differs |
+| Host preflight | Packaged doctor, source access and output/preview checks required by the skill | Chat source transfer depends on actual host tools; no substitute HTML on failure |
 | Analysis | Architecture, dependencies, data, execution, review | Agent source investigation is required; a scanner survey is not a full audit |
 | Completion | Evidence-backed five-area/module/path gate | Checks recorded coverage, not truth of arbitrary agent reasoning |
 | Python | AST imports, symbols, call/I/O candidates, bounded execution sketches | Reflection, runtime dispatch, async/finally semantics remain partial |

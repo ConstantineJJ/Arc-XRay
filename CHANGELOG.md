@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — 2026-11-15
+
+- One-line shell-specific installation with desktop Codex detection outside PATH.
+- Read-only installer capability checks and PowerShell failure-path regression tests.
+- Required host runtime/source preflight and snapshot-transfer guidance for Chat.
+- Explicitly prohibit substitute HTML and unsolicited CMD launchers when blocked.
+
 ## 0.2.0 — 2026-11-15
 
 - Removed mandatory MCP server and bundled its replacement as a self-contained executable skill.

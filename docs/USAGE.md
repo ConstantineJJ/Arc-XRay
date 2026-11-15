@@ -5,6 +5,15 @@ No MCP setup is involved. All runtime/viewer files are under skills/arc-xray/.
 Source-access and Python execution are provided by the host, independently of
 plugin installation. Upload sources if a Chat cannot read your local project.
 
+When a terminal prompt starts with `PS`, use the one-line PowerShell installer in
+README. Bash syntax will not work there. The installer detects the desktop CLI;
+users do not need to enter path variables or change PATH.
+
+Start with the [host execution check](../skills/arc-xray/references/host-environments.md).
+Chat's Python environment and local source may be separate; transfer the actual
+source snapshot and complete skill when possible. If execution is unavailable,
+report the blocker and stop rather than creating substitute HTML or a CMD launcher.
+
 ## Workflow
 
 1. The agent loads the full SKILL.md and supporting references, locates its bundled

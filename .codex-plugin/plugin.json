@@ -1,6 +1,6 @@
 {
   "name": "arc-xray",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Read-only architecture atlases and source-backed review.",
   "author": {
     "name": "ConstantineJJ"

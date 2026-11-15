@@ -17,4 +17,4 @@ jobs:
       - name: Publish the inspected plugin ZIP
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "dist/arc-xray-${GITHUB_REF_NAME#v}.zip" --verify-tag --title "Arc-XRay ${GITHUB_REF_NAME#v}" --notes-file docs/releases/0.2.0.md
+        run: gh release create "$GITHUB_REF_NAME" "dist/arc-xray-${GITHUB_REF_NAME#v}.zip" --verify-tag --title "Arc-XRay ${GITHUB_REF_NAME#v}" --notes-file "docs/releases/${GITHUB_REF_NAME#v}.md"

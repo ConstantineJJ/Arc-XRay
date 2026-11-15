@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "arc-xray",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Read-only, source-backed architecture audits with interactive maps, execution sketches, editable diagrams and evidence-based review.",
   "author": {
     "name": "ConstantineJJ",

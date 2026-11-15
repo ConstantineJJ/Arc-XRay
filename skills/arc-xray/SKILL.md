@@ -22,6 +22,13 @@ data; large graphs use expandable groups and focused views, never a silent sampl
 
 ## 1. Establish accessible source scope
 
+First follow the [host execution check](references/host-environments.md).
+Arc-XRay 0.2+ is a skill, not a callable MCP tool. Absence of tools named
+arc_xray is expected and is not evidence that this skill is unavailable.
+Before promising an atlas, actually run the packaged launcher `doctor` in the
+environment that will generate it. Record the runtime version, viewer_id and
+accessible source scope. A successful plugin installation is not that check.
+
 Use the selected project/current workspace if accessible. Otherwise use uploaded
 source or an authorized repository connection. Read applicable instructions and
 current source bytes; preserve dirty files and project state. Never execute,
@@ -38,6 +45,13 @@ If the host cannot access sources, load packaged files or execute Python, state
 the missing capability and request only what is needed. Do not silently substitute
 another renderer or pretend a metadata-only inspection is a complete source audit.
 Do not search for MCP commands or use an unrelated project MCP to fill this gap.
+If a Chat Python environment is available but cannot see Windows paths, transfer
+the actual skill files and source snapshot into that environment, following the
+host guide. Never infer local disk access from a Windows path string.
+If that route is unavailable, stop atlas generation with a concise capability
+report and one actionable next step. Do not create a preliminary replacement
+HTML or a CMD launcher, or write outside the agreed output folder, to work around
+the missing capability. A launcher is only appropriate if the user asks for it.
 
 ## 2. Initial survey — not the final audit
 

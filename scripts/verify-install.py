@@ -9,6 +9,8 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "skills/arc-xray/scripts"))
+from arc_xray import __version__
 
 
 def main():
@@ -16,7 +18,7 @@ def main():
     if not codex:
         print(json.dumps({"status": "SKIP", "reason": "Codex CLI not installed"}))
         return
-    archive = ROOT / "dist/arc-xray-0.2.0.zip"
+    archive = ROOT / f"dist/arc-xray-{__version__}.zip"
     with tempfile.TemporaryDirectory(prefix="arc-xray-install-") as tmp:
         base = Path(tmp)
         market = base / "marketplace"

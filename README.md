@@ -11,7 +11,7 @@ use the **same packaged renderer and complete data model**.
 
 ## Install in the application
 
-[Download arc-xray-0.2.0.zip](https://github.com/ConstantineJJ/Arc-XRay/releases/download/v0.2.0/arc-xray-0.2.0.zip), then choose **Plugins → Add → Upload plugin
+[Download arc-xray-0.2.1.zip](https://github.com/ConstantineJJ/Arc-XRay/releases/download/v0.2.1/arc-xray-0.2.1.zip), then choose **Plugins → Add → Upload plugin
 archive**. Select Arc-XRay in a new chat. The ZIP contains the skill, Python runtime,
 HTML/CSS/JS viewer and original icon. Its Skills page displays the agent instructions;
 the executable code and viewer live in supporting files within that same skill.
@@ -22,29 +22,31 @@ Do not edit installed caches. Your generated atlases stay separate from the plug
 
 ## Terminal installation
 
-**Windows PowerShell 5.1 or newer** — run these lines (no `&&`):
+**Windows PowerShell 5.1 or newer** — one line. Use this when the prompt starts
+with `PS`. Detects the Codex desktop app even outside PATH; no administrator needed:
 
 ```powershell
-codex plugin marketplace add ConstantineJJ/Arc-XRay
-if ($LASTEXITCODE -eq 0) { codex plugin add arc-xray@arc-xray }
+irm https://raw.githubusercontent.com/ConstantineJJ/Arc-XRay/main/install.ps1 | iex
 ```
 
-**Git Bash on Windows**:
+**Bash on Git Bash, Linux/macOS** — use Bash, not PowerShell:
 
 ```bash
-codex.exe plugin marketplace add ConstantineJJ/Arc-XRay && codex.exe plugin add arc-xray@arc-xray
+curl -fsSL https://raw.githubusercontent.com/ConstantineJJ/Arc-XRay/main/install.sh | bash
 ```
 
-**Bash on Linux/macOS**:
-
-```bash
-codex plugin marketplace add ConstantineJJ/Arc-XRay && codex plugin add arc-xray@arc-xray
-```
-
-The optional source installers are `install.ps1` and `install.sh`. Both support
-DryRun/--dry-run, preserve other plugins and use supported Codex CLI commands.
+These download and run the public [PowerShell installer](install.ps1) or
+[Bash installer](install.sh). They use supported Codex commands and do not change
+PATH or other plugins. Requires Git and Codex with plugin support; Linux/macOS
+require the CLI on PATH. From a downloaded checkout, use `./install.ps1 -CheckOnly`
+or `bash install.sh --check` to verify detection without installation.
 A host Python 3.10+ and actual source access are needed for analysis; installation
 alone does not grant access to a local disk or install a runtime in Chat.
+The agent must run `doctor` before promising an atlas. When Python and source are
+in different environments, transfer the actual source snapshot and skill into
+the execution environment. If unavailable, report the capability blocker and
+stop instead of generating another HTML or CMD launcher. Missing Arc-XRay MCP
+tools is expected. See the [host check](skills/arc-xray/references/host-environments.md).
 
 ## Ask the agent
 

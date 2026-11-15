@@ -11,7 +11,7 @@ MCP, коннекторы и API key не нужны. Агент исследу�
 
 ## Установка через приложение
 
-[Скачайте arc-xray-0.2.0.zip](https://github.com/ConstantineJJ/Arc-XRay/releases/download/v0.2.0/arc-xray-0.2.0.zip): **Plugins → Добавить → Загрузить архив
+[Скачайте arc-xray-0.2.1.zip](https://github.com/ConstantineJJ/Arc-XRay/releases/download/v0.2.1/arc-xray-0.2.1.zip): **Plugins → Добавить → Загрузить архив
 плагина**. Откройте новый чат и выберите Arc-XRay. В архиве находятся инструкции,
 Python-анализатор, шаблон синего UI, локализация и исходный значок.
 
@@ -24,27 +24,26 @@ Python-анализатор, шаблон синего UI, локализаци�
 
 ## Установка в терминале
 
-**Windows PowerShell 5.1 и новее** — две строки без `&&`:
+**Windows PowerShell 5.1 и новее** — одна строка. Используйте её, если приглашение
+терминала начинается с `PS`. Codex находится автоматически, в том числе приложение
+Microsoft Store без записи в PATH. Права администратора не нужны:
 
 ```powershell
-codex plugin marketplace add ConstantineJJ/Arc-XRay
-if ($LASTEXITCODE -eq 0) { codex plugin add arc-xray@arc-xray }
+irm https://raw.githubusercontent.com/ConstantineJJ/Arc-XRay/main/install.ps1 | iex
 ```
 
-**Git Bash в Windows**:
+**Bash в Git Bash, Linux/macOS** — запускать именно в Bash, не в PowerShell:
 
 ```bash
-codex.exe plugin marketplace add ConstantineJJ/Arc-XRay && codex.exe plugin add arc-xray@arc-xray
+curl -fsSL https://raw.githubusercontent.com/ConstantineJJ/Arc-XRay/main/install.sh | bash
 ```
 
-**Bash в Linux/macOS**:
-
-```bash
-codex plugin marketplace add ConstantineJJ/Arc-XRay && codex plugin add arc-xray@arc-xray
-```
-
-В репозитории также есть `install.ps1` и `install.sh` с режимом проверки без
-установки. Они не меняют другие плагины. Для самого анализа нужны Python 3.10+
+Команда скачивает и запускает открытый [PowerShell-установщик](install.ps1) или
+[Bash-установщик](install.sh) из этого репозитория. Они используют штатные команды
+Codex, не меняют PATH и другие плагины. Нужны установленный Codex с поддержкой
+плагинов и Git; Linux/macOS требуют Codex CLI в PATH. Из скачанного репозитория
+можно проверить окружение без установки: `./install.ps1 -CheckOnly` в PowerShell
+или `bash install.sh --check` в Bash. Для самого анализа нужны Python 3.10+
 в окружении приложения и доступ к исходникам. Установка плагина сама по себе не
 открывает доступ к диску и не добавляет Python в обычный Chat.
 
@@ -94,6 +93,11 @@ Invoke-Item .\.test-output\demo\index.html
 ресурсы Skill и выполнять Python. Если их нет, агент должен назвать ограничение,
 а не рисовать другую упрощённую карту. Просмотр зависит от HTML preview приложения;
 тот же index.html можно открыть отдельно в браузере без сервера и соседних файлов.
+Агент сначала запускает `doctor`. Если Python работает в облаке, а исходники —
+на Windows, нужен перенос реального снимка исходников и ресурсов Skill в эту
+среду. При недоступности переноса агент должен назвать ограничение и остановить
+генерацию, а не создать другой HTML или CMD-запускатель. Отсутствие MCP-команд
+Arc-XRay нормально: это плагин со Skill. [Проверка окружения](skills/arc-xray/references/host-environments.md).
 
 Статический анализ не доказывает runtime, безопасность или измеренную эффективность.
 Для Python есть AST, для ряда языков — lexical adapters; смысловое ревью выполняет
