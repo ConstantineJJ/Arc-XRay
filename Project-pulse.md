@@ -22,6 +22,15 @@ separate gates. Native
 Chat generation has not been re-tested by the agent; the user's screenshot of
 the previous substitute HTML is not an accepted canonical atlas.
 
+Publication verified: main CI on da4f36c passes Windows/Linux/macOS and viewer
+checks. The exact remote `irm .../install.ps1 | iex` command run in PowerShell 5.1
+with the ordinary PATH installed 0.2.1 into the user environment; the installed
+doctor confirms version, blue viewer and no MCP requirement. Remote Bash check
+also passes. GitHub release v0.2.1 is published; all 38 downloaded ZIP members
+match the tagged Git source byte-for-byte. Original icon is retained. The only
+native Chat acceptance still outstanding is a fresh agent invocation following
+the new preflight and canonical generation path.
+
 ## 0.2.0 — 2026-11-15
 
 User-requested direction: independent skill plugin, no MCP dependency, one blue
